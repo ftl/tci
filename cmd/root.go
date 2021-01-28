@@ -10,12 +10,14 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/ftl/tci/client"
 	"github.com/spf13/cobra"
 )
 
 var rootFlags = struct {
+	reconnect *bool
 }{}
 
 var rootCmd = &cobra.Command{
@@ -33,6 +35,7 @@ func Execute() {
 }
 
 func init() {
+	rootFlags.reconnect = rootCmd.PersistentFlags().BoolP("reconnect", "r", false, "try to reconnect if the TCI connection failed")
 }
 
 func runWithClient(f func(context.Context, *client.Client, *cobra.Command, []string)) func(*cobra.Command, []string) {
@@ -56,14 +59,21 @@ func runWithClient(f func(context.Context, *client.Client, *cobra.Command, []str
 		signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 		go handleCancelation(signals, cancel)
 
-		client, err := client.Connect(host)
+		var c *client.Client
+		if *rootFlags.reconnect {
+			c = client.KeepOpen(host, 30*time.Second)
+		} else {
+			c, err = client.Open(host)
+		}
 		if err != nil {
 			log.Fatalf("cannot conntect to %s: %v", host.String(), err)
 		}
-		defer client.Disconnect()
-		client.WhenDisconnected(cancel)
+		defer c.Disconnect()
+		if !*rootFlags.reconnect {
+			c.WhenDisconnected(cancel)
+		}
 
-		f(ctx, client, cmd, args)
+		f(ctx, c, cmd, args)
 	}
 }
 

@@ -20,10 +20,14 @@ var ReadTimeout = time.Duration(200 * time.Millisecond)
 // ErrReadTimeout indicates a timeout while waiting for a reply to reading command.
 var ErrReadTimeout = errors.New("read timeout")
 
+// ErrNotConnected indicates that there is currently no TCI connection available.
+var ErrNotConnected = errors.New("not connected")
+
 // Client represents a TCI client.
 type Client struct {
 	notifier
 	host           *net.TCPAddr
+	closed         chan struct{}
 	disconnectChan chan struct{}
 	writeChan      chan command
 }
@@ -45,10 +49,11 @@ type clientConn interface {
 	ReadMessage() (messageType int, p []byte, err error)
 }
 
-// Connect to the given host
-func Connect(host *net.TCPAddr) (*Client, error) {
+// Open a connection to the given host
+func Open(host *net.TCPAddr) (*Client, error) {
 	client := Client{
-		host: host,
+		host:   host,
+		closed: make(chan struct{}),
 	}
 	err := client.connect()
 	if err != nil {
@@ -56,6 +61,42 @@ func Connect(host *net.TCPAddr) (*Client, error) {
 	}
 
 	return &client, nil
+}
+
+func KeepOpen(host *net.TCPAddr, retryInterval time.Duration) *Client {
+	client := &Client{
+		host:   host,
+		closed: make(chan struct{}),
+	}
+	go func() {
+		disconnected := make(chan bool, 1)
+		for {
+			err := client.connect()
+			if err == nil {
+				client.WhenDisconnected(func() {
+					disconnected <- true
+				})
+				select {
+				case <-disconnected:
+					log.Printf("connection lost to %s, waiting for retry", host.IP.String())
+				case <-client.closed:
+					log.Printf("connection closed")
+					return
+				}
+			} else {
+				log.Printf("cannot connect to %s, waiting for retry: %v", host.IP.String(), err)
+			}
+
+			select {
+			case <-time.After(retryInterval):
+				log.Printf("retrying to connect to %s", host.IP.String())
+			case <-client.closed:
+				log.Print("connection closed")
+				return
+			}
+		}
+	}()
+	return client
 }
 
 func (c *Client) connect() error {
@@ -164,9 +205,6 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 	}
 }
 
-func (c *Client) run(conn clientConn) {
-}
-
 func (c *Client) Connected() bool {
 	if c.disconnectChan == nil {
 		return false
@@ -180,6 +218,13 @@ func (c *Client) Connected() bool {
 }
 
 func (c *Client) Disconnect() {
+	// When the connection was disconnected from the outside, we keep it closed.
+	select {
+	case <-c.closed:
+	default:
+		close(c.closed)
+	}
+
 	if c.disconnectChan == nil {
 		return
 	}
@@ -203,6 +248,9 @@ func (c *Client) WhenDisconnected(f func()) {
 }
 
 func (c *Client) command(cmd string, args ...interface{}) (Message, error) {
+	if !c.Connected() {
+		return Message{}, ErrNotConnected
+	}
 	replyChan := make(chan reply, 1)
 	c.writeChan <- command{
 		Message: NewMessage(cmd, args...),
