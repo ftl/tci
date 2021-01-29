@@ -194,7 +194,7 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 						log.Printf("error writing command %q: %v", cmd, err)
 						continue
 					}
-				default:
+				case <-incoming:
 					continue
 				}
 			} else if now.After(currentDeadline) {
