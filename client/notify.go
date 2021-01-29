@@ -20,7 +20,7 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 		err = n.emitVFOLimits(msg)
 	case "trx_count":
 		err = n.emitTRXCount(msg)
-	case "channel_count":
+	case "channels_count":
 		err = n.emitChannelCount(msg)
 	case "device":
 		err = n.emitDeviceName(msg)
@@ -697,42 +697,34 @@ func (n *notifier) emitTune(msg Message) error {
 }
 
 type DriveListener interface {
-	SetDrive(trx int, percent int)
+	SetDrive(percent int)
 }
 
 func (n *notifier) emitDrive(msg Message) error {
-	trx, err := msg.ToInt(0)
-	if err != nil {
-		return err
-	}
-	percent, err := msg.ToInt(1)
+	percent, err := msg.ToInt(0)
 	if err != nil {
 		return err
 	}
 	for _, l := range n.listeners {
 		if listener, ok := l.(DriveListener); ok {
-			listener.SetDrive(trx, percent)
+			listener.SetDrive(percent)
 		}
 	}
 	return nil
 }
 
 type TuneDriveListener interface {
-	SetTuneDrive(trx int, percent int)
+	SetTuneDrive(percent int)
 }
 
 func (n *notifier) emitTuneDrive(msg Message) error {
-	trx, err := msg.ToInt(0)
-	if err != nil {
-		return err
-	}
-	percent, err := msg.ToInt(1)
+	percent, err := msg.ToInt(0)
 	if err != nil {
 		return err
 	}
 	for _, l := range n.listeners {
 		if listener, ok := l.(TuneDriveListener); ok {
-			listener.SetTuneDrive(trx, percent)
+			listener.SetTuneDrive(percent)
 		}
 	}
 	return nil

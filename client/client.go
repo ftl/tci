@@ -542,34 +542,34 @@ func (c *Client) Tune(trx int) (bool, error) {
 	return reply.ToBool(1)
 }
 
-// SetDrive sets the given TRX's output power in percent.
-func (c *Client) SetDrive(trx int, percent int) error {
-	_, err := c.command("drive", trx, percent)
+// SetDrive sets the output power in percent.
+func (c *Client) SetDrive(percent int) error {
+	_, err := c.command("drive", percent)
 	return err
 }
 
-// Drive reads the given TRX's output power in percent.
-func (c *Client) Drive(trx int) (int, error) {
-	reply, err := c.command("drive", trx)
+// Drive reads the output power in percent.
+func (c *Client) Drive() (int, error) {
+	reply, err := c.command("drive")
 	if err != nil {
 		return 0, err
 	}
-	return reply.ToInt(1)
+	return reply.ToInt(0)
 }
 
-// SetTuneDrive sets the given TRX's output power in percent.
-func (c *Client) SetTuneDrive(trx int, percent int) error {
-	_, err := c.command("tune_drive", trx, percent)
+// SetTuneDrive sets the output power for tuning in percent.
+func (c *Client) SetTuneDrive(percent int) error {
+	_, err := c.command("tune_drive", percent)
 	return err
 }
 
-// TuneDrive reads the given TRX's output power in percent.
-func (c *Client) TuneDrive(trx int) (int, error) {
-	reply, err := c.command("tune_drive", trx)
+// TuneDrive reads the output power for tuning in percent.
+func (c *Client) TuneDrive() (int, error) {
+	reply, err := c.command("tune_drive")
 	if err != nil {
 		return 0, err
 	}
-	return reply.ToInt(1)
+	return reply.ToInt(0)
 }
 
 // StartIQ starts the transmission of IQ data for the given TRX.
