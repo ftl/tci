@@ -1,6 +1,6 @@
 # TCI Go Client Library
 
-This is a client library for Expert Electornic's [TCI protocol](https://github.com/maksimus1210/TCI) written in Go. It comes with a simple CLI client application that allows to send single commands to the TCI server and to monitor incoming TCI messages.
+This is a client library for Expert Electronic's [TCI protocol](https://github.com/maksimus1210/TCI) written in Go. It comes with a simple CLI client application that allows to send single commands to the TCI server and to monitor incoming TCI messages.
 
 Currently, there is no support of IQ or audio data.
 
