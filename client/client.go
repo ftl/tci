@@ -23,6 +23,19 @@ var ErrReadTimeout = errors.New("read timeout")
 // ErrNotConnected indicates that there is currently no TCI connection available.
 var ErrNotConnected = errors.New("not connected")
 
+// ConnectionListener is notified when the TCI connection is established or disconnected.
+type ConnectionListener interface {
+	Connected(connected bool)
+}
+
+// ConnectionListenerFunc wraps a function with the ConnectionListener interface.
+type ConnectionListenerFunc func(bool)
+
+// Implements the ConnectionListener interface.
+func (f ConnectionListenerFunc) Connected(connected bool) {
+	f(connected)
+}
+
 // Client represents a TCI client.
 type Client struct {
 	notifier
@@ -123,14 +136,27 @@ func (c *Client) connect() error {
 	c.disconnectChan = make(chan struct{})
 	c.writeChan = make(chan command, 1)
 	remoteAddr := conn.RemoteAddr()
+
 	log.Printf("connected to %s", remoteAddr.String())
+	c.emitConnected(true)
+	c.WhenDisconnected(func() {
+		log.Printf("disconnected from %s", remoteAddr.String())
+		c.emitConnected(false)
+	})
 
 	incoming := make(chan Message, 1)
-
 	go c.readLoop(conn, incoming)
 	go c.writeLoop(conn, incoming)
 
 	return nil
+}
+
+func (c *Client) emitConnected(connected bool) {
+	for _, l := range c.listeners {
+		if listener, ok := l.(ConnectionListener); ok {
+			listener.Connected(connected)
+		}
+	}
 }
 
 func (c *Client) readLoop(conn clientConn, incoming chan<- Message) {
@@ -258,6 +284,9 @@ func (c *Client) command(cmd string, args ...interface{}) (Message, error) {
 	}
 	reply := <-replyChan
 
+	if cmd == "vfo_frequency" {
+		time.Sleep(200 * time.Millisecond)
+	}
 	return reply.Message, reply.err
 }
 
