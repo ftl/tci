@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -299,6 +300,40 @@ func (c *Client) Start() error {
 // Stop ExpertSDR2.
 func (c *Client) Stop() error {
 	_, err := c.command("stop")
+	return err
+}
+
+// SendCWMacro sends the given text, which may contain macro characters <. >, and | to change the speed and send abbreviations.
+func (c *Client) SendCWMacro(trx int, text string) error {
+	_, err := c.command("cw_macros", trx, escapeCWText(text))
+	return err
+}
+
+func escapeCWText(text string) string {
+	result := strings.ReplaceAll(text, ":", "^")
+	result = strings.ReplaceAll(result, ",", "~")
+	result = strings.ReplaceAll(result, ";", "*")
+	if result == "" {
+		return "_"
+	}
+	return result
+}
+
+// SendCWMessage sends the given text, allowing to changes the callsign as long as it was not transmitted yet.
+func (c *Client) SendCWMessage(trx int, before string, callsign string, after string) error {
+	_, err := c.command("cw_msg", trx, escapeCWText(before), escapeCWText(callsign), escapeCWText(after))
+	return err
+}
+
+// SendCallsign changes the callsign of a previous SendCWMessage call, if the callsign was not transmitted yet.
+func (c *Client) SendCallsign(callsign string) error {
+	_, err := c.command("callsign_send", escapeCWText(callsign))
+	return err
+}
+
+// StopCW stops the current CW transmission.
+func (c *Client) StopCW() error {
+	_, err := c.command("cw_macros_stop")
 	return err
 }
 
