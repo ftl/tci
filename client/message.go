@@ -1,7 +1,10 @@
 package client
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,7 +13,7 @@ import (
 var messageExp = regexp.MustCompile(`(?P<name>[A-Za-z_]+)(:(?P<args>[A-Za-z0-9-.]+(,[A-Za-z0-9-.]+)*))?;`)
 
 // ParseMessage parses the given string as a TCI message.
-func ParseMessage(s string) (Message, error) {
+func ParseTextMessage(s string) (Message, error) {
 	matches := messageExp.FindStringSubmatch(s)
 	if len(matches) == 0 {
 		return Message{}, fmt.Errorf("invalid message format: %s", s)
@@ -113,3 +116,63 @@ func (m Message) ToFloat(i int) (float64, error) {
 	}
 	return strconv.ParseFloat(arg, 64)
 }
+
+func ParseBinaryMessage(b []byte) (BinaryMessage, error) {
+	buf := bytes.NewReader(b)
+	var msg encodedBinaryMessage
+	err := binary.Read(buf, binary.LittleEndian, &msg)
+	if err != nil {
+		return BinaryMessage{}, fmt.Errorf("cannot read binary message header: %v", err)
+	}
+	log.Printf("binary message length: bytes %d data %d %d", len(b), msg.DataLength, msg.DataLength/4)
+
+	data := make([]float32, msg.DataLength)
+	err = binary.Read(buf, binary.LittleEndian, &data)
+	if err != nil {
+		return BinaryMessage{}, fmt.Errorf("cannot read binary message data: %v", err)
+	}
+
+	result := BinaryMessage{
+		TRX:        int(msg.TRX),
+		SampleRate: int(msg.SampleRate),
+		Format:     int(msg.Format),
+		Codec:      int(msg.Codec),
+		CRC:        msg.CRC,
+		DataLength: msg.DataLength,
+		Type:       BinaryMessageType(msg.Type),
+		Data:       data,
+	}
+
+	return result, nil
+}
+
+type encodedBinaryMessage struct {
+	TRX        uint32
+	SampleRate uint32
+	Format     uint32
+	Codec      uint32
+	CRC        uint32
+	DataLength uint32
+	Type       uint32
+	Reserved   [9]uint32
+}
+
+type BinaryMessage struct {
+	TRX        int
+	SampleRate int
+	Format     int
+	Codec      int
+	CRC        uint32
+	DataLength uint32
+	Type       BinaryMessageType
+	Data       []float32
+}
+
+type BinaryMessageType uint32
+
+const (
+	IQStream BinaryMessageType = iota
+	RXAudioStream
+	TXAudioStream
+	TXChrono
+)

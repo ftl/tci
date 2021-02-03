@@ -1218,3 +1218,65 @@ func (n *notifier) emitRXBalance(msg Message) error {
 	}
 	return nil
 }
+
+func (n *notifier) handleIncomingBinaryMessage(msg BinaryMessage) {
+	n.emitBinaryMessage(msg)
+	switch msg.Type {
+	case IQStream:
+		n.emitIQData(msg)
+	case RXAudioStream:
+		n.emitRXAudio(msg)
+	case TXChrono:
+		n.emitTXChrono(msg)
+	default:
+		log.Printf("unknown binary message type: %v", msg.Type)
+	}
+}
+
+type BinaryMessageListener interface {
+	BinaryMessage(msg BinaryMessage)
+}
+
+func (n *notifier) emitBinaryMessage(msg BinaryMessage) {
+	for _, l := range n.listeners {
+		if listener, ok := l.(BinaryMessageListener); ok {
+			listener.BinaryMessage(msg)
+		}
+	}
+}
+
+type IQDataListener interface {
+	IQData(trx int, sampleRate IQSampleRate, data []float32)
+}
+
+func (n *notifier) emitIQData(msg BinaryMessage) {
+	for _, l := range n.listeners {
+		if listener, ok := l.(IQDataListener); ok {
+			listener.IQData(msg.TRX, IQSampleRate(msg.SampleRate), msg.Data)
+		}
+	}
+}
+
+type RXAudioListener interface {
+	RXAudio(trx int, sampleRate AudioSampleRate, data []float32)
+}
+
+func (n *notifier) emitRXAudio(msg BinaryMessage) {
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXAudioListener); ok {
+			listener.RXAudio(msg.TRX, AudioSampleRate(msg.SampleRate), msg.Data)
+		}
+	}
+}
+
+type TXChronoListener interface {
+	TXChrono(trx int, sampleRate AudioSampleRate)
+}
+
+func (n *notifier) emitTXChrono(msg BinaryMessage) {
+	for _, l := range n.listeners {
+		if listener, ok := l.(TXChronoListener); ok {
+			listener.TXChrono(msg.TRX, AudioSampleRate(msg.SampleRate))
+		}
+	}
+}

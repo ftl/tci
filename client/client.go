@@ -16,7 +16,7 @@ import (
 const DefaultPort = 40001
 
 // ReadTimeout is the duration to wait for a reply to a reading command.
-var ReadTimeout = time.Duration(200 * time.Millisecond)
+var ReadTimeout = time.Duration(500 * time.Millisecond)
 
 // ErrReadTimeout indicates a timeout while waiting for a reply to reading command.
 var ErrReadTimeout = errors.New("read timeout")
@@ -175,13 +175,20 @@ func (c *Client) readLoop(conn clientConn, incoming chan<- Message) {
 			}
 			switch msgType {
 			case websocket.TextMessage:
-				message, err := ParseMessage(string(msg))
+				message, err := ParseTextMessage(string(msg))
 				if err != nil {
 					log.Printf("cannot parse incoming message: %v", err)
 					continue
 				}
 				c.handleIncomingMessage(message)
 				incoming <- message
+			case websocket.BinaryMessage:
+				message, err := ParseBinaryMessage(msg)
+				if err != nil {
+					log.Printf("cannot parse incoming message: %v", err)
+					continue
+				}
+				c.handleIncomingBinaryMessage(message)
 			default:
 				log.Printf("unknown message type: %d %v", msgType, msg)
 			}
