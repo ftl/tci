@@ -1222,11 +1222,11 @@ func (n *notifier) emitRXBalance(msg Message) error {
 func (n *notifier) handleIncomingBinaryMessage(msg BinaryMessage) {
 	n.emitBinaryMessage(msg)
 	switch msg.Type {
-	case IQStream:
+	case IQStreamMessage:
 		n.emitIQData(msg)
-	case RXAudioStream:
+	case RXAudioStreamMessage:
 		n.emitRXAudio(msg)
-	case TXChrono:
+	case TXChronoMessage:
 		n.emitTXChrono(msg)
 	default:
 		log.Printf("unknown binary message type: %v", msg.Type)

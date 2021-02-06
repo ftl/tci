@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -124,7 +123,6 @@ func ParseBinaryMessage(b []byte) (BinaryMessage, error) {
 	if err != nil {
 		return BinaryMessage{}, fmt.Errorf("cannot read binary message header: %v", err)
 	}
-	log.Printf("binary message length: bytes %d data %d %d", len(b), msg.DataLength, msg.DataLength/4)
 
 	data := make([]float32, msg.DataLength)
 	err = binary.Read(buf, binary.LittleEndian, &data)
@@ -171,8 +169,8 @@ type BinaryMessage struct {
 type BinaryMessageType uint32
 
 const (
-	IQStream BinaryMessageType = iota
-	RXAudioStream
-	TXAudioStream
-	TXChrono
+	IQStreamMessage BinaryMessageType = iota
+	RXAudioStreamMessage
+	TXAudioStreamMessage
+	TXChronoMessage
 )

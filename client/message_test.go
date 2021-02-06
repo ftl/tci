@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseMessage(t *testing.T) {
+func TestParseTextMessage(t *testing.T) {
 	tt := []struct {
 		value    string
 		expected Message
@@ -24,7 +24,7 @@ func TestParseMessage(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.value, func(t *testing.T) {
-			actual, err := ParseMessage(tc.value)
+			actual, err := ParseTextMessage(tc.value)
 			if tc.invalid {
 				assert.Error(t, err)
 			} else {

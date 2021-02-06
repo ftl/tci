@@ -16,7 +16,7 @@ import (
 const DefaultPort = 40001
 
 // ReadTimeout is the duration to wait for a reply to a reading command.
-var ReadTimeout = time.Duration(500 * time.Millisecond)
+var ReadTimeout = time.Duration(50 * time.Millisecond)
 
 // ErrReadTimeout indicates a timeout while waiting for a reply to reading command.
 var ErrReadTimeout = errors.New("read timeout")
@@ -40,6 +40,7 @@ func (f ConnectionListenerFunc) Connected(connected bool) {
 // Client represents a TCI client.
 type Client struct {
 	notifier
+	*streamer
 	host           *net.TCPAddr
 	closed         chan struct{}
 	disconnectChan chan struct{}
@@ -63,25 +64,29 @@ type clientConn interface {
 	ReadMessage() (messageType int, p []byte, err error)
 }
 
-// Open a connection to the given host
-func Open(host *net.TCPAddr) (*Client, error) {
-	client := Client{
+func newClient(host *net.TCPAddr) *Client {
+	result := &Client{
 		host:   host,
 		closed: make(chan struct{}),
 	}
+	result.streamer = newStreamer(&result.notifier, result)
+	result.WhenDisconnected(result.streamer.Close)
+	return result
+}
+
+// Open a connection to the given host
+func Open(host *net.TCPAddr) (*Client, error) {
+	client := newClient(host)
 	err := client.connect()
 	if err != nil {
 		return nil, err
 	}
 
-	return &client, nil
+	return client, nil
 }
 
 func KeepOpen(host *net.TCPAddr, retryInterval time.Duration) *Client {
-	client := &Client{
-		host:   host,
-		closed: make(chan struct{}),
-	}
+	client := newClient(host)
 	go func() {
 		disconnected := make(chan bool, 1)
 		for {
