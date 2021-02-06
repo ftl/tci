@@ -1270,13 +1270,13 @@ func (n *notifier) emitRXAudio(msg BinaryMessage) {
 }
 
 type TXChronoListener interface {
-	TXChrono(trx int, sampleRate AudioSampleRate)
+	TXChrono(trx int, sampleRate AudioSampleRate, requestedSampleCount uint32)
 }
 
 func (n *notifier) emitTXChrono(msg BinaryMessage) {
 	for _, l := range n.listeners {
 		if listener, ok := l.(TXChronoListener); ok {
-			listener.TXChrono(msg.TRX, AudioSampleRate(msg.SampleRate))
+			listener.TXChrono(msg.TRX, AudioSampleRate(msg.SampleRate), msg.DataLength)
 		}
 	}
 }

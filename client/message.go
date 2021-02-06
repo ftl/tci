@@ -124,10 +124,13 @@ func ParseBinaryMessage(b []byte) (BinaryMessage, error) {
 		return BinaryMessage{}, fmt.Errorf("cannot read binary message header: %v", err)
 	}
 
-	data := make([]float32, msg.DataLength)
-	err = binary.Read(buf, binary.LittleEndian, &data)
-	if err != nil {
-		return BinaryMessage{}, fmt.Errorf("cannot read binary message data: %v", err)
+	var data []float32
+	if BinaryMessageType(msg.Type) != TXChronoMessage && msg.DataLength > 0 {
+		data = make([]float32, msg.DataLength)
+		err = binary.Read(buf, binary.LittleEndian, &data)
+		if err != nil {
+			return BinaryMessage{}, fmt.Errorf("cannot read binary message data: %d %d %v", msg.Type, msg.DataLength, err)
+		}
 	}
 
 	result := BinaryMessage{
