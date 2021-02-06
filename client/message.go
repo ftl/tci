@@ -116,6 +116,32 @@ func (m Message) ToFloat(i int) (float64, error) {
 	return strconv.ParseFloat(arg, 64)
 }
 
+// NewTXAudioMessage returns a binary message of type TXAudioStream that contains the given samples.
+func NewTXAudioMessage(trx int, sampleRate AudioSampleRate, samples []float32) ([]byte, error) {
+	msg := &encodedBinaryMessage{
+		TRX:        uint32(trx),
+		SampleRate: uint32(sampleRate),
+		Format:     4,
+		Codec:      0,
+		CRC:        0,
+		DataLength: uint32(len(samples)),
+		Type:       uint32(TXAudioStreamMessage),
+	}
+
+	buf := bytes.NewBuffer(make([]byte, 0, 64+len(samples)*4))
+	err := binary.Write(buf, binary.LittleEndian, msg)
+	if err != nil {
+		return nil, fmt.Errorf("cannot write tx audio message header: %w", err)
+	}
+	err = binary.Write(buf, binary.LittleEndian, &samples)
+	if err != nil {
+		return nil, fmt.Errorf("cannot write tx audio message data: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}
+
+// ParseBinaryMessage parses the given byte slice as incoming binary message.
 func ParseBinaryMessage(b []byte) (BinaryMessage, error) {
 	buf := bytes.NewReader(b)
 	var msg encodedBinaryMessage

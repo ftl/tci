@@ -17,9 +17,9 @@ import (
 )
 
 var rootFlags = struct {
-	hostAddress *string
-	trx         *int
-	reconnect   *bool
+	hostAddress string
+	trx         int
+	reconnect   bool
 }{}
 
 var rootCmd = &cobra.Command{
@@ -37,14 +37,14 @@ func Execute() {
 }
 
 func init() {
-	rootFlags.hostAddress = rootCmd.PersistentFlags().StringP("host", "", "localhost:40001", "connect to this TCI host")
-	rootFlags.trx = rootCmd.PersistentFlags().IntP("trx", "t", 0, "use this TRX")
-	rootFlags.reconnect = rootCmd.PersistentFlags().BoolP("reconnect", "r", false, "try to reconnect if the TCI connection failed")
+	rootCmd.PersistentFlags().StringVar(&rootFlags.hostAddress, "host", "localhost:40001", "connect to this TCI host")
+	rootCmd.PersistentFlags().IntVar(&rootFlags.trx, "trx", 0, "use this TRX")
+	rootCmd.PersistentFlags().BoolVar(&rootFlags.reconnect, "reconnect", false, "try to reconnect if the TCI connection failed")
 }
 
 func runWithClient(f func(context.Context, *client.Client, *cobra.Command, []string)) func(*cobra.Command, []string) {
 	return func(cmd *cobra.Command, args []string) {
-		host, err := parseHostArg(*rootFlags.hostAddress)
+		host, err := parseHostArg(rootFlags.hostAddress)
 		if err != nil {
 			log.Fatalf("invalid host address: %v", err)
 		}
@@ -59,7 +59,7 @@ func runWithClient(f func(context.Context, *client.Client, *cobra.Command, []str
 		go handleCancelation(signals, cancel)
 
 		var c *client.Client
-		if *rootFlags.reconnect {
+		if rootFlags.reconnect {
 			c = client.KeepOpen(host, 30*time.Second)
 		} else {
 			c, err = client.Open(host)
@@ -68,7 +68,7 @@ func runWithClient(f func(context.Context, *client.Client, *cobra.Command, []str
 			log.Fatalf("cannot conntect to %s: %v", host.String(), err)
 		}
 		defer c.Disconnect()
-		if !*rootFlags.reconnect {
+		if !rootFlags.reconnect {
 			c.WhenDisconnected(cancel)
 		}
 

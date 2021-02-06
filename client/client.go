@@ -40,15 +40,21 @@ func (f ConnectionListenerFunc) Connected(connected bool) {
 // Client represents a TCI client.
 type Client struct {
 	DeviceInfo
-	notifier
+	*notifier
 	*streamer
 	host           *net.TCPAddr
 	closed         chan struct{}
 	ready          chan struct{}
 	disconnectChan chan struct{}
-	writeChan      chan command
+	commands       chan command
+	txAudio        chan []byte
 	timeout        time.Duration
 }
+
+const (
+	commandQueueSize = 1
+	txAudioQueueSize = 25
+)
 
 type command struct {
 	Message
@@ -74,9 +80,9 @@ func newClient(host *net.TCPAddr, listeners []interface{}) *Client {
 		ready:   make(chan struct{}),
 		timeout: DefaultTimeout,
 	}
-	result.notifier.listeners = listeners
+	result.notifier = newNotifier(listeners, result.closed)
 	result.Notify(result)
-	result.streamer = newStreamer(&result.notifier, result)
+	result.streamer = newStreamer(result.notifier, result)
 	result.WhenDisconnected(result.streamer.Close)
 	return result
 }
@@ -148,7 +154,8 @@ func (c *Client) connect() error {
 	}
 	c.ready = make(chan struct{})
 	c.disconnectChan = make(chan struct{})
-	c.writeChan = make(chan command, 1)
+	c.commands = make(chan command, commandQueueSize)
+	c.txAudio = make(chan []byte, txAudioQueueSize)
 	remoteAddr := conn.RemoteAddr()
 
 	incoming := make(chan Message, 1)
@@ -195,7 +202,7 @@ func (c *Client) readLoop(conn clientConn, incoming chan<- Message) {
 					log.Printf("cannot parse incoming message: %v", err)
 					continue
 				}
-				c.handleIncomingMessage(message)
+				c.notifier.textMessage(message)
 				incoming <- message
 			case websocket.BinaryMessage:
 				message, err := ParseBinaryMessage(msg)
@@ -203,7 +210,7 @@ func (c *Client) readLoop(conn clientConn, incoming chan<- Message) {
 					log.Printf("cannot parse incoming message: %v", err)
 					continue
 				}
-				c.handleIncomingBinaryMessage(message)
+				c.notifier.binaryMessage(message)
 			default:
 				log.Printf("unknown message type: %d %v", msgType, msg)
 			}
@@ -216,40 +223,53 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 
 	var currentCommand *command
 	var currentDeadline time.Time
+	timer := time.NewTimer(c.timeout)
+	defer timer.Stop()
 
 	for {
 		now := time.Now()
-		select {
-		case <-c.disconnectChan:
-			return
-		case msg := <-incoming:
-			if currentCommand == nil {
-				continue
-			}
-			if msg.IsReplyTo(currentCommand.Message) {
-				currentCommand.reply <- reply{Message: msg}
-				currentCommand = nil
-			}
-		default:
-			if currentCommand == nil {
-				select {
-				case cmd := <-c.writeChan:
-					if cmd.reply != nil {
-						currentCommand = &cmd
-						currentDeadline = now.Add(c.timeout)
-					}
-					err := conn.WriteMessage(websocket.TextMessage, []byte(cmd.String()))
-					if err != nil {
-						log.Printf("error writing command %q: %v", cmd, err)
-						continue
-					}
-				case <-incoming:
+		if currentCommand == nil {
+			select {
+			case msg := <-c.txAudio:
+				err := conn.WriteMessage(websocket.BinaryMessage, msg)
+				if err != nil {
+					log.Printf("error writing tx audio: %v", err)
 					continue
 				}
-			} else if now.After(currentDeadline) {
+			case cmd := <-c.commands:
+				if cmd.reply != nil {
+					currentCommand = &cmd
+					currentDeadline = now.Add(c.timeout)
+				}
+				err := conn.WriteMessage(websocket.TextMessage, []byte(cmd.String()))
+				if err != nil {
+					log.Printf("error writing command %q: %v", cmd, err)
+					continue
+				}
+			case <-incoming:
+				continue
+			}
+		} else {
+			timer.Reset(currentDeadline.Sub(now))
+			select {
+			case <-c.disconnectChan:
+				return
+			case msg := <-c.txAudio:
+				err := conn.WriteMessage(websocket.BinaryMessage, msg)
+				if err != nil {
+					log.Printf("error writing tx audio: %v", err)
+					continue
+				}
+			case msg := <-incoming:
+				if msg.IsReplyTo(currentCommand.Message) {
+					currentCommand.reply <- reply{Message: msg}
+					currentCommand = nil
+				}
+			case <-timer.C:
 				currentCommand.reply <- reply{err: ErrTimeout}
 				currentCommand = nil
 			}
+			timer.Stop()
 		}
 	}
 }
@@ -309,7 +329,7 @@ func (c *Client) command(cmd string, args ...interface{}) (Message, error) {
 		return Message{}, ErrNotConnected
 	}
 	replyChan := make(chan reply, 1)
-	c.writeChan <- command{
+	c.commands <- command{
 		Message: NewMessage(cmd, args...),
 		reply:   replyChan,
 	}
@@ -319,6 +339,20 @@ func (c *Client) command(cmd string, args ...interface{}) (Message, error) {
 		time.Sleep(200 * time.Millisecond)
 	}
 	return reply.Message, reply.err
+}
+
+// SendTXAudio sends the given samples as reply to a TXChrono message.
+func (c *Client) SendTXAudio(trx int, sampleRate AudioSampleRate, samples []float32) error {
+	msg, err := NewTXAudioMessage(trx, sampleRate, samples)
+	if err != nil {
+		return err
+	}
+	select {
+	case c.txAudio <- msg:
+		return nil
+	default:
+		return fmt.Errorf("tx audio queue blocked, samples dropped")
+	}
 }
 
 // SetTimeout sets the duration to wait for the reply to a command.

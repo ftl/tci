@@ -2,12 +2,43 @@ package client
 
 import "log"
 
+func newNotifier(listeners []interface{}, closed <-chan struct{}) *notifier {
+	result := &notifier{
+		listeners:      listeners,
+		closed:         closed,
+		textMessages:   make(chan Message, 1),
+		binaryMessages: make(chan BinaryMessage, 1),
+	}
+	go result.notifyLoop()
+	return result
+}
+
 type notifier struct {
-	listeners []interface{}
+	listeners      []interface{}
+	closed         <-chan struct{}
+	textMessages   chan Message
+	binaryMessages chan BinaryMessage
+}
+
+func (n *notifier) notifyLoop() {
+	for {
+		select {
+		case <-n.closed:
+			return
+		case msg := <-n.textMessages:
+			n.handleIncomingMessage(msg)
+		case msg := <-n.binaryMessages:
+			n.handleIncomingBinaryMessage(msg)
+		}
+	}
 }
 
 func (n *notifier) Notify(listener interface{}) {
 	n.listeners = append(n.listeners, listener)
+}
+
+func (n *notifier) textMessage(msg Message) {
+	n.textMessages <- msg
 }
 
 func (n *notifier) handleIncomingMessage(msg Message) {
@@ -1217,6 +1248,10 @@ func (n *notifier) emitRXBalance(msg Message) error {
 		}
 	}
 	return nil
+}
+
+func (n *notifier) binaryMessage(msg BinaryMessage) {
+	n.binaryMessages <- msg
 }
 
 func (n *notifier) handleIncomingBinaryMessage(msg BinaryMessage) {
