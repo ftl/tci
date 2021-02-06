@@ -39,10 +39,12 @@ func (f ConnectionListenerFunc) Connected(connected bool) {
 
 // Client represents a TCI client.
 type Client struct {
+	DeviceInfo
 	notifier
 	*streamer
 	host           *net.TCPAddr
 	closed         chan struct{}
+	ready          chan struct{}
 	disconnectChan chan struct{}
 	writeChan      chan command
 	timeout        time.Duration
@@ -65,20 +67,23 @@ type clientConn interface {
 	ReadMessage() (messageType int, p []byte, err error)
 }
 
-func newClient(host *net.TCPAddr) *Client {
+func newClient(host *net.TCPAddr, listeners []interface{}) *Client {
 	result := &Client{
 		host:    host,
 		closed:  make(chan struct{}),
+		ready:   make(chan struct{}),
 		timeout: DefaultTimeout,
 	}
+	result.notifier.listeners = listeners
+	result.Notify(result)
 	result.streamer = newStreamer(&result.notifier, result)
 	result.WhenDisconnected(result.streamer.Close)
 	return result
 }
 
 // Open a connection to the given host
-func Open(host *net.TCPAddr) (*Client, error) {
-	client := newClient(host)
+func Open(host *net.TCPAddr, listeners ...interface{}) (*Client, error) {
+	client := newClient(host, listeners)
 	err := client.connect()
 	if err != nil {
 		return nil, err
@@ -87,8 +92,8 @@ func Open(host *net.TCPAddr) (*Client, error) {
 	return client, nil
 }
 
-func KeepOpen(host *net.TCPAddr, retryInterval time.Duration) *Client {
-	client := newClient(host)
+func KeepOpen(host *net.TCPAddr, retryInterval time.Duration, listeners ...interface{}) *Client {
+	client := newClient(host, listeners)
 	go func() {
 		disconnected := make(chan bool, 1)
 		for {
@@ -141,9 +146,16 @@ func (c *Client) connect() error {
 	if err != nil {
 		return fmt.Errorf("cannot open websocket connection: %w", err)
 	}
+	c.ready = make(chan struct{})
 	c.disconnectChan = make(chan struct{})
 	c.writeChan = make(chan command, 1)
 	remoteAddr := conn.RemoteAddr()
+
+	incoming := make(chan Message, 1)
+	go c.readLoop(conn, incoming)
+	go c.writeLoop(conn, incoming)
+
+	<-c.ready
 
 	log.Printf("connected to %s", remoteAddr.String())
 	c.emitConnected(true)
@@ -151,10 +163,6 @@ func (c *Client) connect() error {
 		log.Printf("disconnected from %s", remoteAddr.String())
 		c.emitConnected(false)
 	})
-
-	incoming := make(chan Message, 1)
-	go c.readLoop(conn, incoming)
-	go c.writeLoop(conn, incoming)
 
 	return nil
 }
@@ -243,6 +251,14 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 				currentCommand = nil
 			}
 		}
+	}
+}
+
+func (c *Client) Ready() {
+	select {
+	case <-c.ready:
+	default:
+		close(c.ready)
 	}
 }
 
