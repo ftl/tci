@@ -15,11 +15,11 @@ import (
 // DefaultPort of TCI
 const DefaultPort = 40001
 
-// ReadTimeout is the duration to wait for a reply to a reading command.
-var ReadTimeout = time.Duration(50 * time.Millisecond)
+// DefaultTimeout is the defaultduration to wait for a reply to a command.
+var DefaultTimeout = time.Duration(50 * time.Millisecond)
 
-// ErrReadTimeout indicates a timeout while waiting for a reply to reading command.
-var ErrReadTimeout = errors.New("read timeout")
+// ErrTimeout indicates a timeout while waiting for a reply to command.
+var ErrTimeout = errors.New("timeout")
 
 // ErrNotConnected indicates that there is currently no TCI connection available.
 var ErrNotConnected = errors.New("not connected")
@@ -45,6 +45,7 @@ type Client struct {
 	closed         chan struct{}
 	disconnectChan chan struct{}
 	writeChan      chan command
+	timeout        time.Duration
 }
 
 type command struct {
@@ -66,8 +67,9 @@ type clientConn interface {
 
 func newClient(host *net.TCPAddr) *Client {
 	result := &Client{
-		host:   host,
-		closed: make(chan struct{}),
+		host:    host,
+		closed:  make(chan struct{}),
+		timeout: DefaultTimeout,
 	}
 	result.streamer = newStreamer(&result.notifier, result)
 	result.WhenDisconnected(result.streamer.Close)
@@ -226,7 +228,7 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 				case cmd := <-c.writeChan:
 					if cmd.reply != nil {
 						currentCommand = &cmd
-						currentDeadline = now.Add(ReadTimeout)
+						currentDeadline = now.Add(c.timeout)
 					}
 					err := conn.WriteMessage(websocket.TextMessage, []byte(cmd.String()))
 					if err != nil {
@@ -237,7 +239,7 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 					continue
 				}
 			} else if now.After(currentDeadline) {
-				currentCommand.reply <- reply{err: ErrReadTimeout}
+				currentCommand.reply <- reply{err: ErrTimeout}
 				currentCommand = nil
 			}
 		}
@@ -303,13 +305,23 @@ func (c *Client) command(cmd string, args ...interface{}) (Message, error) {
 	return reply.Message, reply.err
 }
 
-// Start ExpertSDR2.
+// SetTimeout sets the duration to wait for the reply to a command.
+func (c *Client) SetTimeout(timeout time.Duration) {
+	c.timeout = timeout
+}
+
+// Timeout is the duration to wait for the reply to a command.
+func (c *Client) Timeout() time.Duration {
+	return c.timeout
+}
+
+// Start the SDR operation.
 func (c *Client) Start() error {
 	_, err := c.command("start")
 	return err
 }
 
-// Stop ExpertSDR2.
+// Stop the SDR operation.
 func (c *Client) Stop() error {
 	_, err := c.command("stop")
 	return err
