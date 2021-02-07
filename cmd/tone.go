@@ -101,18 +101,19 @@ func newOscillator(c *client.Client, sampleRate int) *oscillator {
 }
 
 func (o *oscillator) Read(out []float32) (int, error) {
-	for i := range out {
+	for i := 0; i < len(out)-1; i += 2 {
 		out[i] = float32(o.amplitude1 * math.Cos(2*math.Pi*o.frequency1*o.t+o.phase1))
 		if o.frequency2 != 0 {
 			out[i] += float32(o.amplitude2 * math.Cos(2*math.Pi*o.frequency2*o.t+o.phase2))
 		}
+		out[i+1] = out[i]
 		o.t += o.tick
 	}
 	return len(out), nil
 }
 
 func (o *oscillator) TXChrono(trx int, sampleRate client.AudioSampleRate, requestedSampleCount uint32) {
-	if len(o.buf) < int(requestedSampleCount) {
+	if len(o.buf) != int(requestedSampleCount) {
 		o.buf = make([]float32, requestedSampleCount)
 	}
 	sampleCount, err := o.Read(o.buf)

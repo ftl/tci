@@ -41,7 +41,6 @@ func (f ConnectionListenerFunc) Connected(connected bool) {
 type Client struct {
 	DeviceInfo
 	*notifier
-	*streamer
 	host           *net.TCPAddr
 	closed         chan struct{}
 	ready          chan struct{}
@@ -82,8 +81,6 @@ func newClient(host *net.TCPAddr, listeners []interface{}) *Client {
 	}
 	result.notifier = newNotifier(listeners, result.closed)
 	result.Notify(result)
-	result.streamer = newStreamer(result.notifier, result)
-	result.WhenDisconnected(result.streamer.Close)
 	return result
 }
 
