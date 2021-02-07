@@ -33,6 +33,7 @@ func (n *notifier) notifyLoop() {
 	}
 }
 
+// Notify registers the given listener. The listener is then notified about incoming messages.
 func (n *notifier) Notify(listener interface{}) {
 	n.listeners = append(n.listeners, listener)
 }
@@ -163,6 +164,7 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 	}
 }
 
+// MessageListener is notified when any text message is received from the TCI server.
 type MessageListener interface {
 	Message(msg Message)
 }
@@ -175,6 +177,7 @@ func (n *notifier) emitMessage(msg Message) {
 	}
 }
 
+// A VFOLimitsListener is notified when a VFO_LIMITS message is received from the TCI server.
 type VFOLimitsListener interface {
 	SetVFOLimits(min, max int)
 }
@@ -196,6 +199,7 @@ func (n *notifier) emitVFOLimits(msg Message) error {
 	return nil
 }
 
+// An IFLimitsListener is notified when an IF_LIMITS message is received from the TCI server.
 type IFLimitsListener interface {
 	SetIFLimits(min, max int)
 }
@@ -217,6 +221,7 @@ func (n *notifier) emitIFLimits(msg Message) error {
 	return nil
 }
 
+// A TRXCountListener is notified when a TRX_COUNT message is received from the TCI server.
 type TRXCountListener interface {
 	SetTRXCount(count int)
 }
@@ -234,6 +239,7 @@ func (n *notifier) emitTRXCount(msg Message) error {
 	return nil
 }
 
+// A ChannelCountListener is notified when a CHANNEL_COUNT message is received from the TCI server.
 type ChannelCountListener interface {
 	SetChannelCount(count int)
 }
@@ -251,6 +257,7 @@ func (n *notifier) emitChannelCount(msg Message) error {
 	return nil
 }
 
+// A DeviceNameListener is notified when a DEVICE message is received from the TCI server.
 type DeviceNameListener interface {
 	SetDeviceName(name string)
 }
@@ -268,6 +275,7 @@ func (n *notifier) emitDeviceName(msg Message) error {
 	return nil
 }
 
+// A RXOnlyListener is notified when a RECEIVE_ONLY message is received from the TCI server.
 type RXOnlyListener interface {
 	SetRXOnly(value bool)
 }
@@ -285,6 +293,7 @@ func (n *notifier) emitRXOnly(msg Message) error {
 	return nil
 }
 
+// A ModesListener is notified when a MODULATIONS_LIST message is received from the TCI server.
 type ModesListener interface {
 	SetModes(modes []Mode)
 }
@@ -302,6 +311,7 @@ func (n *notifier) emitModes(msg Message) error {
 	return nil
 }
 
+// A TXEnableListener is notified when a TX_ENABLE message is received from the TCI server.
 type TXEnableListener interface {
 	SetTXEnable(trx int, enabled bool)
 }
@@ -323,6 +333,7 @@ func (n *notifier) emitTXEnable(msg Message) error {
 	return nil
 }
 
+// A ReadyListener is notified when a READY message is received from the TCI server.
 type ReadyListener interface {
 	Ready()
 }
@@ -336,6 +347,7 @@ func (n *notifier) emitReady(Message) error {
 	return nil
 }
 
+// A TXFootswitchListener is notified when a TX_FOOTSWITCH message is received from the TCI server.
 type TXFootswitchListener interface {
 	SetTXFootswitch(trx int, pressed bool)
 }
@@ -357,6 +369,7 @@ func (n *notifier) emitTXFootswitch(msg Message) error {
 	return nil
 }
 
+// A StartListener is notified when a START message is received from the TCI server.
 type StartListener interface {
 	Start()
 }
@@ -370,6 +383,7 @@ func (n *notifier) emitStart(Message) error {
 	return nil
 }
 
+// A StopListener is notified when a STOP message is received from the TCI server.
 type StopListener interface {
 	Stop()
 }
@@ -383,6 +397,7 @@ func (n *notifier) emitStop(Message) error {
 	return nil
 }
 
+// A DDSListener is notified when a DDS message is received from the TCI server.
 type DDSListener interface {
 	SetDDS(trx int, frequency int)
 }
@@ -404,6 +419,7 @@ func (n *notifier) emitDDS(msg Message) error {
 	return nil
 }
 
+// An IFListener is notified when an IF_LIMITS message is received from the TCI server.
 type IFListener interface {
 	SetIF(trx int, vfo VFO, frequency int)
 }
@@ -429,6 +445,7 @@ func (n *notifier) emitIF(msg Message) error {
 	return nil
 }
 
+// A RITEnableListener is notified when a RIT_ENABLE message is received from the TCI server.
 type RITEnableListener interface {
 	SetRITEnable(trx int, enabled bool)
 }
@@ -450,6 +467,7 @@ func (n *notifier) emitRITEnable(msg Message) error {
 	return nil
 }
 
+// A ModeListener is notified when a MODULATION message is received from the TCI server.
 type ModeListener interface {
 	SetMode(trx int, mode Mode)
 }
@@ -471,6 +489,7 @@ func (n *notifier) emitMode(msg Message) error {
 	return nil
 }
 
+// A RXEnableListener is notified when a RX_ENABLE message is received from the TCI server.
 type RXEnableListener interface {
 	SetRXEnable(trx int, enabled bool)
 }
@@ -492,6 +511,7 @@ func (n *notifier) emitRXEnable(msg Message) error {
 	return nil
 }
 
+// A XITEnableListener is notified when a XIT_ENABLE message is received from the TCI server.
 type XITEnableListener interface {
 	SetXITEnable(trx int, enabled bool)
 }
@@ -513,6 +533,7 @@ func (n *notifier) emitXITEnable(msg Message) error {
 	return nil
 }
 
+// A SplitEnableListener is notified when a SPLIT_ENABLE message is received from the TCI server.
 type SplitEnableListener interface {
 	SetSplitEnable(trx int, enabled bool)
 }
@@ -534,6 +555,7 @@ func (n *notifier) emitSplitEnable(msg Message) error {
 	return nil
 }
 
+// A RITOffsetListener is notified when a RIT_OFFSET message is received from the TCI server.
 type RITOffsetListener interface {
 	SetRITOffset(trx int, offset int)
 }
@@ -555,6 +577,7 @@ func (n *notifier) emitRITOffset(msg Message) error {
 	return nil
 }
 
+// A XITOffsetListener is notified when a XIT_OFFSET message is received from the TCI server.
 type XITOffsetListener interface {
 	SetXITOffset(trx int, offset int)
 }
@@ -576,6 +599,7 @@ func (n *notifier) emitXITOffset(msg Message) error {
 	return nil
 }
 
+// A RXChannelEnableListener is notified when a RX_CHANNEL_ENABLE message is received from the TCI server.
 type RXChannelEnableListener interface {
 	SetRXChannelEnable(trx int, vfo VFO, enabled bool)
 }
@@ -601,6 +625,7 @@ func (n *notifier) emitRXChannelEnable(msg Message) error {
 	return nil
 }
 
+// A RXFilterBandListener is notified when a RX_FILTER_BAND message is received from the TCI server.
 type RXFilterBandListener interface {
 	SetRXFilterBand(trx int, min, max int)
 }
@@ -626,6 +651,7 @@ func (n *notifier) emitRXFilterBand(msg Message) error {
 	return nil
 }
 
+// A RXSMeterListener is notified when a RX_SMETER message is received from the TCI server.
 type RXSMeterListener interface {
 	SetRXSMeter(trx int, vfo VFO, level int)
 }
@@ -651,6 +677,7 @@ func (n *notifier) emitRXSMeter(msg Message) error {
 	return nil
 }
 
+// A CWMacrosSpeedListener is notified when a CW_MACROS_SPEED message is received from the TCI server.
 type CWMacrosSpeedListener interface {
 	SetCWMacrosSpeed(wpm int)
 }
@@ -668,6 +695,7 @@ func (n *notifier) emitCWMacrosSpeed(msg Message) error {
 	return nil
 }
 
+// A CWMacrosDelayListener is notified when a CW_MACROS_DELAY message is received from the TCI server.
 type CWMacrosDelayListener interface {
 	SetCWMacrosDelay(delay int)
 }
@@ -685,6 +713,7 @@ func (n *notifier) emitCWMacrosDelay(msg Message) error {
 	return nil
 }
 
+// A TXListener is notified when a TRX message is received from the TCI server.
 type TXListener interface {
 	SetTX(trx int, enabled bool)
 }
@@ -706,6 +735,7 @@ func (n *notifier) emitTX(msg Message) error {
 	return nil
 }
 
+// A TuneListener is notified when a TUNE message is received from the TCI server.
 type TuneListener interface {
 	SetTune(trx int, enabled bool)
 }
@@ -727,6 +757,7 @@ func (n *notifier) emitTune(msg Message) error {
 	return nil
 }
 
+// A DriveListener is notified when a DRIVE message is received from the TCI server.
 type DriveListener interface {
 	SetDrive(percent int)
 }
@@ -744,6 +775,7 @@ func (n *notifier) emitDrive(msg Message) error {
 	return nil
 }
 
+// A TuneDriveListener is notified when a TUNE_DRIVE message is received from the TCI server.
 type TuneDriveListener interface {
 	SetTuneDrive(percent int)
 }
@@ -761,6 +793,7 @@ func (n *notifier) emitTuneDrive(msg Message) error {
 	return nil
 }
 
+// A StartIQListener is notified when a IQ_START message is received from the TCI server.
 type StartIQListener interface {
 	StartIQ(trx int)
 }
@@ -778,6 +811,7 @@ func (n *notifier) emitStartIQ(msg Message) error {
 	return nil
 }
 
+// A StopIQListener is notified when a IQ_STOP message is received from the TCI server.
 type StopIQListener interface {
 	StopIQ(trx int)
 }
@@ -795,6 +829,7 @@ func (n *notifier) emitStopIQ(msg Message) error {
 	return nil
 }
 
+// A IQSampleRateListener is notified when a IQ_SAMPLERATE message is received from the TCI server.
 type IQSampleRateListener interface {
 	SetIQSampleRate(sampleRate IQSampleRate)
 }
@@ -812,6 +847,7 @@ func (n *notifier) emitIQSampleRate(msg Message) error {
 	return nil
 }
 
+// A StartAudioListener is notified when a AUDIO_START message is received from the TCI server.
 type StartAudioListener interface {
 	StartAudio(trx int)
 }
@@ -829,6 +865,7 @@ func (n *notifier) emitStartAudio(msg Message) error {
 	return nil
 }
 
+// A StopAudioListener is notified when a AUDIO_STOP message is received from the TCI server.
 type StopAudioListener interface {
 	StopAudio(trx int)
 }
@@ -846,6 +883,7 @@ func (n *notifier) emitStopAudio(msg Message) error {
 	return nil
 }
 
+// A AudioSampleRateListener is notified when a AUDIO_SAMPLERATE message is received from the TCI server.
 type AudioSampleRateListener interface {
 	SetAudioSampleRate(sampleRate AudioSampleRate)
 }
@@ -863,6 +901,7 @@ func (n *notifier) emitAudioSampleRate(msg Message) error {
 	return nil
 }
 
+// A ProtocolListener is notified when a PROTOCOL message is received from the TCI server.
 type ProtocolListener interface {
 	SetProtocol(name string, version string)
 }
@@ -884,6 +923,7 @@ func (n *notifier) emitProtocol(msg Message) error {
 	return nil
 }
 
+// A TXPowerListener is notified when a TX_POWER message is received from the TCI server.
 type TXPowerListener interface {
 	SetTXPower(watts float64)
 }
@@ -901,6 +941,7 @@ func (n *notifier) emitTXPower(msg Message) error {
 	return nil
 }
 
+// A TXSWRListener is notified when a TX_SWR message is received from the TCI server.
 type TXSWRListener interface {
 	SetTXSWR(ratio float64)
 }
@@ -918,6 +959,7 @@ func (n *notifier) emitTXSWR(msg Message) error {
 	return nil
 }
 
+// A VolumeListener is notified when a VOLUME message is received from the TCI server.
 type VolumeListener interface {
 	SetVolume(dB int)
 }
@@ -935,7 +977,8 @@ func (n *notifier) emitVolume(msg Message) error {
 	return nil
 }
 
-type SquelchListener interface {
+// A SquelchEnableListener is notified when a SQL_ENABLE message is received from the TCI server.
+type SquelchEnableListener interface {
 	SetSquelchEnable(trx int, enabled bool)
 }
 
@@ -949,13 +992,14 @@ func (n *notifier) emitSquelchEnable(msg Message) error {
 		return err
 	}
 	for _, l := range n.listeners {
-		if listener, ok := l.(SquelchListener); ok {
+		if listener, ok := l.(SquelchEnableListener); ok {
 			listener.SetSquelchEnable(trx, enabled)
 		}
 	}
 	return nil
 }
 
+// A SquelchLevelListener is notified when a SQL_LEVEL message is received from the TCI server.
 type SquelchLevelListener interface {
 	SetSquelchLevel(dB int)
 }
@@ -973,6 +1017,7 @@ func (n *notifier) emitSquelchLevel(msg Message) error {
 	return nil
 }
 
+// A VFOFrequencyListener is notified when a VFO message is received from the TCI server.
 type VFOFrequencyListener interface {
 	SetVFOFrequency(trx int, vfo VFO, frequency int)
 }
@@ -998,6 +1043,7 @@ func (n *notifier) emitVFOFrequency(msg Message) error {
 	return nil
 }
 
+// A AppFocusListener is notified when a APP_FOCUS message is received from the TCI server.
 type AppFocusListener interface {
 	SetAppFocus(focussed bool)
 }
@@ -1015,6 +1061,7 @@ func (n *notifier) emitAppFocus(msg Message) error {
 	return nil
 }
 
+// A MuteListener is notified when a MUTE message is received from the TCI server.
 type MuteListener interface {
 	SetMute(muted bool)
 }
@@ -1032,6 +1079,7 @@ func (n *notifier) emitMute(msg Message) error {
 	return nil
 }
 
+// A RXMuteListener is notified when a RX_MUTE message is received from the TCI server.
 type RXMuteListener interface {
 	SetRXMute(trx int, muted bool)
 }
@@ -1053,6 +1101,7 @@ func (n *notifier) emitRXMute(msg Message) error {
 	return nil
 }
 
+// A CTCSSEnableListener is notified when a CTCSS_ENABLE message is received from the TCI server.
 type CTCSSEnableListener interface {
 	SetCTCSSEnable(trx int, enabled bool)
 }
@@ -1074,6 +1123,7 @@ func (n *notifier) emitCTCSSEnable(msg Message) error {
 	return nil
 }
 
+// A CTCSSModeListener is notified when a CTCSS_MODE message is received from the TCI server.
 type CTCSSModeListener interface {
 	SetCTCSSMode(trx int, mode CTCSSMode)
 }
@@ -1095,6 +1145,7 @@ func (n *notifier) emitCTCSSMode(msg Message) error {
 	return nil
 }
 
+// A CTCSSRXToneListener is notified when a CTCSS_RX_TONE message is received from the TCI server.
 type CTCSSRXToneListener interface {
 	SetCTCSSRXTone(trx int, tone CTCSSTone)
 }
@@ -1116,6 +1167,7 @@ func (n *notifier) emitCTCSSRXTone(msg Message) error {
 	return nil
 }
 
+// A CTCSSTXToneListener is notified when a CTCSS_TX_TONE message is received from the TCI server.
 type CTCSSTXToneListener interface {
 	SetCTCSSTXTone(trx int, tone CTCSSTone)
 }
@@ -1137,6 +1189,7 @@ func (n *notifier) emitCTCSSTXTone(msg Message) error {
 	return nil
 }
 
+// A CTCSSLevelListener is notified when a CTCSS_LEVEL message is received from the TCI server.
 type CTCSSLevelListener interface {
 	SetCTCSSLevel(trx int, percent int)
 }
@@ -1158,6 +1211,7 @@ func (n *notifier) emitCTCSSLevel(msg Message) error {
 	return nil
 }
 
+// A ECoderSwitchRXListener is notified when a EXODER_SWITCH_RX message is received from the TCI server.
 type ECoderSwitchRXListener interface {
 	SetECoderSwitchRX(ecoder int, trx int)
 }
@@ -1179,6 +1233,7 @@ func (n *notifier) emitECoderSwitchRX(msg Message) error {
 	return nil
 }
 
+// A ECoderSwitchChannelListener is notified when a ECODER_SWITCH_CHANNEL message is received from the TCI server.
 type ECoderSwitchChannelListener interface {
 	SetECoderSwitchChannel(ecoder int, vfo VFO)
 }
@@ -1200,6 +1255,7 @@ func (n *notifier) emitECoderSwitchChannel(msg Message) error {
 	return nil
 }
 
+// A RXVolumeListener is notified when a RX_VOLUME message is received from the TCI server.
 type RXVolumeListener interface {
 	SetRXVolume(trx int, vfo VFO, dB int)
 }
@@ -1225,6 +1281,7 @@ func (n *notifier) emitRXVolume(msg Message) error {
 	return nil
 }
 
+// A RXBalanceListener is notified when a RX_BALANCE message is received from the TCI server.
 type RXBalanceListener interface {
 	SetRXBalance(trx int, vfo VFO, dB int)
 }
@@ -1268,6 +1325,7 @@ func (n *notifier) handleIncomingBinaryMessage(msg BinaryMessage) {
 	}
 }
 
+// A BinaryMessageListener is notified when any binary message (IQ data, audio data, or tx chrono) is received from the TCI server.
 type BinaryMessageListener interface {
 	BinaryMessage(msg BinaryMessage)
 }
@@ -1280,6 +1338,7 @@ func (n *notifier) emitBinaryMessage(msg BinaryMessage) {
 	}
 }
 
+// A IQDataListener is notified when IQ data is received from the TCI server.
 type IQDataListener interface {
 	IQData(trx int, sampleRate IQSampleRate, data []float32)
 }
@@ -1292,8 +1351,9 @@ func (n *notifier) emitIQData(msg BinaryMessage) {
 	}
 }
 
+// A RXAudioListener is notified when RX audio data is received from the TCI server.
 type RXAudioListener interface {
-	RXAudio(trx int, sampleRate AudioSampleRate, data []float32)
+	RXAudio(trx int, sampleRate AudioSampleRate, samples []float32)
 }
 
 func (n *notifier) emitRXAudio(msg BinaryMessage) {
@@ -1304,6 +1364,7 @@ func (n *notifier) emitRXAudio(msg BinaryMessage) {
 	}
 }
 
+// A TXChronoListener is notified when a TX chrono message is received from the TCI server.
 type TXChronoListener interface {
 	TXChrono(trx int, sampleRate AudioSampleRate, requestedSampleCount uint32)
 }

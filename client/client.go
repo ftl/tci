@@ -1,3 +1,6 @@
+/*
+The package client provides a client implementation for the TCI protocol.
+*/
 package client
 
 import (
@@ -15,10 +18,10 @@ import (
 // DefaultPort of TCI
 const DefaultPort = 40001
 
-// DefaultTimeout is the defaultduration to wait for a reply to a command.
+// DefaultTimeout is the default duration to wait for the reply of a command.
 var DefaultTimeout = time.Duration(50 * time.Millisecond)
 
-// ErrTimeout indicates a timeout while waiting for a reply to command.
+// ErrTimeout indicates a timeout while waiting for the reply of a command.
 var ErrTimeout = errors.New("timeout")
 
 // ErrNotConnected indicates that there is currently no TCI connection available.
@@ -84,7 +87,8 @@ func newClient(host *net.TCPAddr, listeners []interface{}) *Client {
 	return result
 }
 
-// Open a connection to the given host
+// Open a connection to the given host. The given listeners are notified about any incoming message.
+// Open returns as soon as the READY; message was received.
 func Open(host *net.TCPAddr, listeners ...interface{}) (*Client, error) {
 	client := newClient(host, listeners)
 	err := client.connect()
@@ -95,6 +99,11 @@ func Open(host *net.TCPAddr, listeners ...interface{}) (*Client, error) {
 	return client, nil
 }
 
+// KeepOpen opens a connection to the given host and tries to keep an open connection by automatically
+// trying to reconnect when an established connection is lost (after the given grace period). The given
+// listeners are notified about any incoming message.
+// KeepOpen returns immediately. If you want to know when the connection is available, add a ConnectionListener to the
+// list of listeners.
 func KeepOpen(host *net.TCPAddr, retryInterval time.Duration, listeners ...interface{}) *Client {
 	client := newClient(host, listeners)
 	go func() {
@@ -271,6 +280,7 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 	}
 }
 
+// Ready handles the READY; message coming from the TCI host. Should not be called from outside!
 func (c *Client) Ready() {
 	select {
 	case <-c.ready:
@@ -279,6 +289,7 @@ func (c *Client) Ready() {
 	}
 }
 
+// Connected indicates if there is currently a TCI connection established.
 func (c *Client) Connected() bool {
 	if c.disconnectChan == nil {
 		return false
@@ -291,6 +302,8 @@ func (c *Client) Connected() bool {
 	}
 }
 
+// Disconnect the TCI connection. If this client was created using KeepOpen, the automatic
+// retry stops and the client stays disconnected.
 func (c *Client) Disconnect() {
 	// When the connection was disconnected from the outside, we keep it closed.
 	select {
@@ -310,6 +323,7 @@ func (c *Client) Disconnect() {
 	}
 }
 
+// WhenDisconnected calls the given function when the client gets disconnected.
 func (c *Client) WhenDisconnected(f func()) {
 	if c.disconnectChan == nil {
 		f()
@@ -339,6 +353,7 @@ func (c *Client) command(cmd string, args ...interface{}) (Message, error) {
 }
 
 // SendTXAudio sends the given samples as reply to a TXChrono message.
+// The samples need to be in stereo, i.e. channel 1 and channel 2 interleaved.
 func (c *Client) SendTXAudio(trx int, sampleRate AudioSampleRate, samples []float32) error {
 	msg, err := NewTXAudioMessage(trx, sampleRate, samples)
 	if err != nil {

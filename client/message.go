@@ -11,7 +11,7 @@ import (
 
 var messageExp = regexp.MustCompile(`(?P<name>[A-Za-z_]+)(:(?P<args>[A-Za-z0-9-.]+(,[A-Za-z0-9-.]+)*))?;`)
 
-// ParseMessage parses the given string as a TCI message.
+// ParseMessage interprets the given string as a TCI message.
 func ParseTextMessage(s string) (Message, error) {
 	matches := messageExp.FindStringSubmatch(s)
 	if len(matches) == 0 {
@@ -117,6 +117,7 @@ func (m Message) ToFloat(i int) (float64, error) {
 }
 
 // NewTXAudioMessage returns a binary message of type TXAudioStream that contains the given samples.
+// The binary message can directly be send through a websocket connection to the TCI server.
 func NewTXAudioMessage(trx int, sampleRate AudioSampleRate, samples []float32) ([]byte, error) {
 	msg := &encodedBinaryMessage{
 		TRX:        uint32(trx),
@@ -184,6 +185,7 @@ type encodedBinaryMessage struct {
 	Reserved   [9]uint32
 }
 
+// BinaryMessage represents a binary message that is exchanged between the TCI server and a client.
 type BinaryMessage struct {
 	TRX        int
 	SampleRate int
@@ -195,8 +197,10 @@ type BinaryMessage struct {
 	Data       []float32
 }
 
+// BinaryMessageType represents the type of a BinaryMessage
 type BinaryMessageType uint32
 
+// All message types available in TCI.
 const (
 	IQStreamMessage BinaryMessageType = iota
 	RXAudioStreamMessage

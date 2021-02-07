@@ -2,7 +2,7 @@ package client
 
 import "fmt"
 
-// VFO represents a VFO in TCI.
+// VFO represents a VFO in TCI. In the TCI documentation the VFOs area also named "channel".
 type VFO int
 
 // All available VFOs in TCI.
@@ -14,7 +14,7 @@ const (
 // Mode represents the modulation type of a TRX.
 type Mode string
 
-// All available modes in TCI.
+// All modes acvailable in TCI.
 const (
 	ModeAM   = Mode("am")
 	ModeSAM  = Mode("sam")
@@ -40,7 +40,7 @@ const (
 	SignalSourceVAC     = SignalSource("vac")
 )
 
-// IQSampleRate represents the sample rate for IQ data in Hz.
+// IQSampleRate represents the sample rate for IQ data in samples per second.
 type IQSampleRate int
 
 // All available sample rates for IQ data.
@@ -50,7 +50,7 @@ const (
 	IQSampleRate192k = IQSampleRate(192000)
 )
 
-// AudioSampleRate represents the sample rate for audio data in Hz.
+// AudioSampleRate represents the sample rate for audio data in samples per second.
 type AudioSampleRate int
 
 // All available sample rates for audio data.
