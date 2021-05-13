@@ -246,7 +246,6 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 				if cmd.reply != nil {
 					currentCommand = &cmd
 					currentDeadline = now.Add(c.timeout)
-					log.Printf("cmd %v now %v deadline %v", cmd, now, currentDeadline)
 				}
 				err := conn.WriteMessage(websocket.TextMessage, []byte(cmd.String()))
 				if err != nil {
@@ -259,7 +258,6 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 		} else {
 			now := time.Now()
 			timer.Reset(currentDeadline.Sub(now))
-			log.Printf("cmd %v now %v deadline %v", *currentCommand, now, currentDeadline)
 			select {
 			case <-c.disconnectChan:
 				return
