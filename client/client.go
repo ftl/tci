@@ -518,13 +518,13 @@ func (c *Client) XITEnable(trx int) (bool, error) {
 	return reply.ToBool(1)
 }
 
-// SetSplitEnable enables the split mode of the given TRX.
+// SetSplitEnable enables the split mode of the given TRX. When split mode is enabled, VFOB is used for transmitting.
 func (c *Client) SetSplitEnable(trx int, enabled bool) error {
 	_, err := c.command("split_enable", trx, enabled)
 	return err
 }
 
-// SplitEnable reads the split mode enable state of the given TRX.
+// SplitEnable reads the split mode enable state of the given TRX. When split mode is enabled, VFOB is used for transmitting.
 func (c *Client) SplitEnable(trx int) (bool, error) {
 	reply, err := c.command("split_enable", trx)
 	if err != nil {
@@ -797,13 +797,13 @@ func (c *Client) ClearSpots() error {
 	return err
 }
 
-// SetVolume sets the main volume in dB.
+// SetVolume sets the main volume in dB (range from -60dB to 0dB).
 func (c *Client) SetVolume(dB int) error {
 	_, err := c.command("volume", dB)
 	return err
 }
 
-// Volume reads the main volume in dB.
+// Volume reads the main volume in dB (range from -60dB to 0dB).
 func (c *Client) Volume() (int, error) {
 	reply, err := c.command("volume")
 	if err != nil {
@@ -827,13 +827,13 @@ func (c *Client) SquelchEnable(trx int) (bool, error) {
 	return reply.ToBool(1)
 }
 
-// SetSquelchLevel sets given TRX's squelch threshold in dB.
+// SetSquelchLevel sets given TRX's squelch threshold in dB (range from -140dB to 0dB).
 func (c *Client) SetSquelchLevel(dB int) error {
 	_, err := c.command("sql_level", dB)
 	return err
 }
 
-// SquelchLevel reads the given TRX's squelch threshold in dB.
+// SquelchLevel reads the given TRX's squelch threshold in dB (range from -140dB to 0dB).
 func (c *Client) SquelchLevel() (int, error) {
 	reply, err := c.command("sql_level")
 	if err != nil {
@@ -1002,13 +1002,13 @@ func (c *Client) ECoderSwitchChannel(ecoder int) (VFO, error) {
 	return VFO(vfo), err
 }
 
-// SetRXVolume sets the given TRX's channel volume in dB.
+// SetRXVolume sets the given TRX's channel volume in dB (range from -60dB to 0dB).
 func (c *Client) SetRXVolume(trx int, vfo VFO, dB int) error {
 	_, err := c.command("rx_volume", trx, vfo, dB)
 	return err
 }
 
-// RXVolume reads the given TRX's channel volume in dB.
+// RXVolume reads the given TRX's channel volume in dB (range from -60dB to 0dB).
 func (c *Client) RXVolume(trx int, vfo VFO) (int, error) {
 	reply, err := c.command("rx_volume", trx, vfo)
 	if err != nil {
@@ -1017,13 +1017,13 @@ func (c *Client) RXVolume(trx int, vfo VFO) (int, error) {
 	return reply.ToInt(2)
 }
 
-// SetRXBalance sets the given TRX's channel balance in dB.
+// SetRXBalance sets the given TRX's channel balance in dB (range from -40dB to 40dB).
 func (c *Client) SetRXBalance(trx int, vfo VFO, dB int) error {
 	_, err := c.command("rx_balance", trx, vfo, dB)
 	return err
 }
 
-// RXBalance reads the given TRX's channel balance in dB.
+// RXBalance reads the given TRX's channel balance in dB (range from -40dB to 40dB).
 func (c *Client) RXBalance(trx int, vfo VFO) (int, error) {
 	reply, err := c.command("rx_balance", trx, vfo)
 	if err != nil {
