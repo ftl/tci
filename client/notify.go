@@ -49,7 +49,7 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 	case "vfo_limits":
 		err = n.emitVFOLimits(msg)
 	case "if_limits":
-		err = n.emitVFOLimits(msg)
+		err = n.emitIFLimits(msg)
 	case "trx_count":
 		err = n.emitTRXCount(msg)
 	case "channels_count":
