@@ -51,6 +51,7 @@ type Client struct {
 	commands       chan command
 	txAudio        chan []byte
 	timeout        time.Duration
+	trace          bool
 }
 
 const (
@@ -75,12 +76,13 @@ type clientConn interface {
 	ReadMessage() (messageType int, p []byte, err error)
 }
 
-func newClient(host *net.TCPAddr, listeners []interface{}) *Client {
+func newClient(host *net.TCPAddr, trace bool, listeners []interface{}) *Client {
 	result := &Client{
 		host:    host,
 		closed:  make(chan struct{}),
 		ready:   make(chan struct{}),
 		timeout: DefaultTimeout,
+		trace:   trace,
 	}
 	result.notifier = newNotifier(listeners, result.closed)
 	result.Notify(result)
@@ -89,8 +91,8 @@ func newClient(host *net.TCPAddr, listeners []interface{}) *Client {
 
 // Open a connection to the given host. The given listeners are notified about any incoming message.
 // Open returns as soon as the READY; message was received.
-func Open(host *net.TCPAddr, listeners ...interface{}) (*Client, error) {
-	client := newClient(host, listeners)
+func Open(host *net.TCPAddr, trace bool, listeners ...interface{}) (*Client, error) {
+	client := newClient(host, trace, listeners)
 	err := client.connect()
 	if err != nil {
 		return nil, err
@@ -104,8 +106,8 @@ func Open(host *net.TCPAddr, listeners ...interface{}) (*Client, error) {
 // listeners are notified about any incoming message.
 // KeepOpen returns immediately. If you want to know when the connection is available, add a ConnectionListener to the
 // list of listeners.
-func KeepOpen(host *net.TCPAddr, retryInterval time.Duration, listeners ...interface{}) *Client {
-	client := newClient(host, listeners)
+func KeepOpen(host *net.TCPAddr, retryInterval time.Duration, trace bool, listeners ...interface{}) *Client {
+	client := newClient(host, trace, listeners)
 	go func() {
 		disconnected := make(chan bool, 1)
 		for {
@@ -203,6 +205,9 @@ func (c *Client) readLoop(conn clientConn, incoming chan<- Message) {
 			}
 			switch msgType {
 			case websocket.TextMessage:
+				if c.trace {
+					log.Printf("< %s", msg)
+				}
 				message, err := ParseTextMessage(string(msg))
 				if err != nil {
 					log.Printf("cannot parse incoming message: %v", err)
@@ -211,6 +216,9 @@ func (c *Client) readLoop(conn clientConn, incoming chan<- Message) {
 				c.notifier.textMessage(message)
 				incoming <- message
 			case websocket.BinaryMessage:
+				// if c.trace {
+				// 	log.Printf("< [BINARY DATA]")
+				// }
 				message, err := ParseBinaryMessage(msg)
 				if err != nil {
 					log.Printf("cannot parse incoming message: %v", err)
@@ -236,6 +244,9 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 		if currentCommand == nil {
 			select {
 			case msg := <-c.txAudio:
+				// if c.trace {
+				// 	log.Printf("> [TX AUDIO]")
+				// }
 				err := conn.WriteMessage(websocket.BinaryMessage, msg)
 				if err != nil {
 					log.Printf("error writing tx audio: %v", err)
@@ -246,6 +257,9 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 				if cmd.reply != nil {
 					currentCommand = &cmd
 					currentDeadline = now.Add(c.timeout)
+				}
+				if c.trace {
+					log.Printf("> %s", cmd)
 				}
 				err := conn.WriteMessage(websocket.TextMessage, []byte(cmd.String()))
 				if err != nil {
