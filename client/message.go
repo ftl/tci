@@ -95,7 +95,11 @@ func (m Message) ToInt(i int) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return strconv.Atoi(arg)
+	f, err := strconv.ParseFloat(arg, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int(f), nil
 }
 
 // ToBool returns the argument with the given index as boolean.
