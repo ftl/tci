@@ -35,11 +35,21 @@ func ParseTextMessage(s string) (Message, error) {
 	return Message{name: name, args: args}, nil
 }
 
-// NewMessage returns a new message with the given name and the given arguments.
-func NewMessage(name string, args ...interface{}) Message {
+// NewCommandMessage returns a new message with the given name and the given arguments that does not require a response.
+func NewCommandMessage(name string, args ...interface{}) Message {
+	return newMessage(name, false, args)
+}
+
+// NewRequestMessage returns a new message with the given name and the given arguments that requires a response.
+func NewRequestMessage(name string, args ...interface{}) Message {
+	return newMessage(name, true, args)
+}
+
+func newMessage(name string, responseRequired bool, args []interface{}) Message {
 	result := Message{
-		name: strings.ToLower(strings.TrimSpace(name)),
-		args: make([]string, len(args)),
+		name:             strings.ToLower(strings.TrimSpace(name)),
+		args:             make([]string, len(args)),
+		responseRequired: responseRequired,
 	}
 	for i, arg := range args {
 		result.args[i] = strings.TrimSpace(fmt.Sprintf("%v", arg))
@@ -49,8 +59,9 @@ func NewMessage(name string, args ...interface{}) Message {
 
 // Message represents a message that is exchanged between the TCI server and a client.
 type Message struct {
-	name string
-	args []string
+	name             string
+	args             []string
+	responseRequired bool
 }
 
 func (m Message) String() string {

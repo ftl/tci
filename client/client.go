@@ -287,7 +287,11 @@ func (c *Client) writeLoop(conn clientConn, incoming <-chan Message) {
 					currentCommand = nil
 				}
 			case <-timer.C:
-				currentCommand.reply <- reply{err: ErrTimeout}
+				if currentCommand.responseRequired {
+					currentCommand.reply <- reply{err: ErrTimeout}
+				} else {
+					currentCommand.reply <- reply{}
+				}
 				currentCommand = nil
 			}
 			timer.Stop()
@@ -351,19 +355,24 @@ func (c *Client) WhenDisconnected(f func()) {
 }
 
 func (c *Client) command(cmd string, args ...interface{}) (Message, error) {
+	return c.send(NewCommandMessage(cmd, args...))
+}
+
+func (c *Client) request(cmd string, args ...interface{}) (Message, error) {
+	return c.send(NewRequestMessage(cmd, args...))
+}
+
+func (c *Client) send(message Message) (Message, error) {
 	if !c.Connected() {
 		return Message{}, ErrNotConnected
 	}
 	replyChan := make(chan reply, 1)
 	c.commands <- command{
-		Message: NewMessage(cmd, args...),
+		Message: message,
 		reply:   replyChan,
 	}
 	reply := <-replyChan
 
-	if cmd == "vfo_frequency" {
-		time.Sleep(200 * time.Millisecond)
-	}
 	return reply.Message, reply.err
 }
 
@@ -446,7 +455,7 @@ func (c *Client) SetDDS(trx int, frequency int) error {
 
 // DDS reads the center frequency of the given TRX's panorama.
 func (c *Client) DDS(trx int) (int, error) {
-	reply, err := c.command("dds", trx)
+	reply, err := c.request("dds", trx)
 	if err != nil {
 		return 0, err
 	}
@@ -461,7 +470,7 @@ func (c *Client) SetIF(trx int, vfo VFO, frequency int) error {
 
 // IF reads the tuning frequency of the given TRX's vfo.
 func (c *Client) IF(trx int, vfo VFO) (int, error) {
-	reply, err := c.command("if", trx, vfo)
+	reply, err := c.request("if", trx, vfo)
 	if err != nil {
 		return 0, err
 	}
@@ -476,7 +485,7 @@ func (c *Client) SetRITEnable(trx int, enabled bool) error {
 
 // RITEnable reads the RIT enable state of the given TRX.
 func (c *Client) RITEnable(trx int) (bool, error) {
-	reply, err := c.command("rit_enable", trx)
+	reply, err := c.request("rit_enable", trx)
 	if err != nil {
 		return false, err
 	}
@@ -491,7 +500,7 @@ func (c *Client) SetMode(trx int, mode Mode) error {
 
 // Mode reads the mode of the given TRX.
 func (c *Client) Mode(trx int) (Mode, error) {
-	reply, err := c.command("modulation", trx)
+	reply, err := c.request("modulation", trx)
 	if err != nil {
 		return "", err
 	}
@@ -510,7 +519,7 @@ func (c *Client) SetRXEnable(trx int, enabled bool) error {
 
 // RXEnable reads the RX enable state of the given TRX.
 func (c *Client) RXEnable(trx int) (bool, error) {
-	reply, err := c.command("rx_enable", trx)
+	reply, err := c.request("rx_enable", trx)
 	if err != nil {
 		return false, err
 	}
@@ -525,7 +534,7 @@ func (c *Client) SetXITEnable(trx int, enabled bool) error {
 
 // XITEnable reads the XIT enable state of the given TRX.
 func (c *Client) XITEnable(trx int) (bool, error) {
-	reply, err := c.command("xit_enable", trx)
+	reply, err := c.request("xit_enable", trx)
 	if err != nil {
 		return false, err
 	}
@@ -540,7 +549,7 @@ func (c *Client) SetSplitEnable(trx int, enabled bool) error {
 
 // SplitEnable reads the split mode enable state of the given TRX. When split mode is enabled, VFOB is used for transmitting.
 func (c *Client) SplitEnable(trx int) (bool, error) {
-	reply, err := c.command("split_enable", trx)
+	reply, err := c.request("split_enable", trx)
 	if err != nil {
 		return false, err
 	}
@@ -555,7 +564,7 @@ func (c *Client) SetRITOffset(trx int, offset int) error {
 
 // RITOffset reads the RIT offset in Hz for the given TRX.
 func (c *Client) RITOffset(trx int) (int, error) {
-	reply, err := c.command("rit_offset", trx)
+	reply, err := c.request("rit_offset", trx)
 	if err != nil {
 		return 0, err
 	}
@@ -570,7 +579,7 @@ func (c *Client) SetXITOffset(trx int, offset int) error {
 
 // XITOffset reads the XIT offset in Hz for the given TRX.
 func (c *Client) XITOffset(trx int) (int, error) {
-	reply, err := c.command("xit_offset", trx)
+	reply, err := c.request("xit_offset", trx)
 	if err != nil {
 		return 0, err
 	}
@@ -585,7 +594,7 @@ func (c *Client) SetRXChannelEnable(trx int, vfo VFO, enabled bool) error {
 
 // RXChannelEnable reads the enable state of the given TRX's additional RX channel with the given index.
 func (c *Client) RXChannelEnable(trx int, vfo VFO) (bool, error) {
-	reply, err := c.command("rx_channel_enable", trx, vfo)
+	reply, err := c.request("rx_channel_enable", trx, vfo)
 	if err != nil {
 		return false, err
 	}
@@ -600,7 +609,7 @@ func (c *Client) SetRXFilterBand(trx int, min, max int) error {
 
 // RXFilterBand reads the IF filter boundaries of the given TRX.
 func (c *Client) RXFilterBand(trx int) (int, int, error) {
-	reply, err := c.command("rx_filter_band")
+	reply, err := c.request("rx_filter_band")
 	if err != nil {
 		return 0, 0, err
 	}
@@ -623,7 +632,7 @@ func (c *Client) SetRXSMeter(trx int, vfo VFO, level int) error {
 
 // RXSMeter reads the signal level of the given TRX's RX channel with the given index.
 func (c *Client) RXSMeter(trx int, vfo VFO) (int, error) {
-	reply, err := c.command("rx_smeter", trx, vfo)
+	reply, err := c.request("rx_smeter", trx, vfo)
 	if err != nil {
 		return 0, err
 	}
@@ -638,7 +647,7 @@ func (c *Client) SetCWMacrosSpeed(wpm int) error {
 
 // CWMacrosSpeed reads the speed in WPM for CW macros.
 func (c *Client) CWMacrosSpeed() (int, error) {
-	reply, err := c.command("cw_macros_speed")
+	reply, err := c.request("cw_macros_speed")
 	if err != nil {
 		return 0, err
 	}
@@ -653,7 +662,7 @@ func (c *Client) CWMacrosSpeedInc(delta int) error {
 
 // CWMacrosSpeedDec decreases the speed for CW macros by the given delta in WPM.
 func (c *Client) CWMacrosSpeedDec(delta int) error {
-	_, err := c.command("cw_macros_speed_down", delta)
+	_, err := c.request("cw_macros_speed_down", delta)
 	return err
 }
 
@@ -665,7 +674,7 @@ func (c *Client) SetCWMacrosDelay(delay int) error {
 
 // CWMacrosDelay reads the delay for transmitting CW macros in milliseconds.
 func (c *Client) CWMacrosDelay() (int, error) {
-	reply, err := c.command("cw_macros_delay")
+	reply, err := c.request("cw_macros_delay")
 	if err != nil {
 		return 0, err
 	}
@@ -685,7 +694,7 @@ func (c *Client) SetTX(trx int, enabled bool, source SignalSource) error {
 
 // TX reads the current state of the given TRX's transmitter.
 func (c *Client) TX(trx int) (bool, error) {
-	reply, err := c.command("trx", trx)
+	reply, err := c.request("trx", trx)
 	if err != nil {
 		return false, err
 	}
@@ -700,7 +709,7 @@ func (c *Client) SetTune(trx int, enabled bool) error {
 
 // Tune reads the current state of the given TRX's tuning transmitter.
 func (c *Client) Tune(trx int) (bool, error) {
-	reply, err := c.command("tune", trx)
+	reply, err := c.request("tune", trx)
 	if err != nil {
 		return false, err
 	}
@@ -715,7 +724,7 @@ func (c *Client) SetDrive(percent int) error {
 
 // Drive reads the output power in percent.
 func (c *Client) Drive() (int, error) {
-	reply, err := c.command("drive")
+	reply, err := c.request("drive")
 	if err != nil {
 		return 0, err
 	}
@@ -730,7 +739,7 @@ func (c *Client) SetTuneDrive(percent int) error {
 
 // TuneDrive reads the output power for tuning in percent.
 func (c *Client) TuneDrive() (int, error) {
-	reply, err := c.command("tune_drive")
+	reply, err := c.request("tune_drive")
 	if err != nil {
 		return 0, err
 	}
@@ -757,7 +766,7 @@ func (c *Client) SetIQSampleRate(sampleRate IQSampleRate) error {
 
 // IQSampleRate reads the sample rate for IQ data.
 func (c *Client) IQSampleRate() (IQSampleRate, error) {
-	reply, err := c.command("iq_samplerate")
+	reply, err := c.request("iq_samplerate")
 	if err != nil {
 		return 0, err
 	}
@@ -785,7 +794,7 @@ func (c *Client) SetAudioSampleRate(sampleRate AudioSampleRate) error {
 
 // AudioSampleRate reads the sample rate for Audio data.
 func (c *Client) AudioSampleRate() (AudioSampleRate, error) {
-	reply, err := c.command("audio_samplerate")
+	reply, err := c.request("audio_samplerate")
 	if err != nil {
 		return 0, err
 	}
@@ -819,7 +828,7 @@ func (c *Client) SetVolume(dB int) error {
 
 // Volume reads the main volume in dB (range from -60dB to 0dB).
 func (c *Client) Volume() (int, error) {
-	reply, err := c.command("volume")
+	reply, err := c.request("volume")
 	if err != nil {
 		return 0, err
 	}
@@ -834,7 +843,7 @@ func (c *Client) SetSquelchEnable(trx int, enabled bool) error {
 
 // SquelchEnable reads the enable state of the given TRX's squelch.
 func (c *Client) SquelchEnable(trx int) (bool, error) {
-	reply, err := c.command("sql_enable", trx)
+	reply, err := c.request("sql_enable", trx)
 	if err != nil {
 		return false, err
 	}
@@ -849,7 +858,7 @@ func (c *Client) SetSquelchLevel(dB int) error {
 
 // SquelchLevel reads the given TRX's squelch threshold in dB (range from -140dB to 0dB).
 func (c *Client) SquelchLevel() (int, error) {
-	reply, err := c.command("sql_level")
+	reply, err := c.request("sql_level")
 	if err != nil {
 		return 0, err
 	}
@@ -864,7 +873,7 @@ func (c *Client) SetVFOFrequency(trx int, vfo VFO, frequency int) error {
 
 // VFOFrequency reads the tuning frequency of the given TRX's vfo.
 func (c *Client) VFOFrequency(trx int, vfo VFO) (int, error) {
-	reply, err := c.command("vfo", trx, vfo)
+	reply, err := c.request("vfo", trx, vfo)
 	if err != nil {
 		return 0, err
 	}
@@ -885,7 +894,7 @@ func (c *Client) SetMute(muted bool) error {
 
 // Mute reads main volume's mute state.
 func (c *Client) Mute() (bool, error) {
-	reply, err := c.command("mute")
+	reply, err := c.request("mute")
 	if err != nil {
 		return false, err
 	}
@@ -900,7 +909,7 @@ func (c *Client) SetRXMute(trx int, muted bool) error {
 
 // RXMute reads given TRX's receiver mute state.
 func (c *Client) RXMute(trx int) (bool, error) {
-	reply, err := c.command("rx_mute", trx)
+	reply, err := c.request("rx_mute", trx)
 	if err != nil {
 		return false, err
 	}
@@ -915,7 +924,7 @@ func (c *Client) SetCTCSSEnable(trx int, muted bool) error {
 
 // CTCSSEnable reads enable state of CTCSS for the given TRX.
 func (c *Client) CTCSSEnable(trx int) (bool, error) {
-	reply, err := c.command("ctcss_enable", trx)
+	reply, err := c.request("ctcss_enable", trx)
 	if err != nil {
 		return false, err
 	}
@@ -930,7 +939,7 @@ func (c *Client) SetCTCSSMode(trx int, mode CTCSSMode) error {
 
 // CTCSSMode reads the CTCSS mode of the given TRX.
 func (c *Client) CTCSSMode(trx int) (CTCSSMode, error) {
-	reply, err := c.command("ctcss_enable", trx)
+	reply, err := c.request("ctcss_enable", trx)
 	if err != nil {
 		return 0, err
 	}
@@ -946,7 +955,7 @@ func (c *Client) SetCTCSSRXTone(trx int, tone CTCSSTone) error {
 
 // CTCSSRXTone reads the given TRX's CTCSS subtone for receiving.
 func (c *Client) CTCSSRXTone(trx int) (CTCSSTone, error) {
-	reply, err := c.command("ctcss_rx_tone", trx)
+	reply, err := c.request("ctcss_rx_tone", trx)
 	if err != nil {
 		return 0, err
 	}
@@ -962,7 +971,7 @@ func (c *Client) SetCTCSSTXTone(trx int, tone CTCSSTone) error {
 
 // CTCSSTXTone reads the given TRX's CTCSS subtone for transmitting.
 func (c *Client) CTCSSTXTone(trx int) (CTCSSTone, error) {
-	reply, err := c.command("ctcss_tx_tone", trx)
+	reply, err := c.request("ctcss_tx_tone", trx)
 	if err != nil {
 		return 0, err
 	}
@@ -978,7 +987,7 @@ func (c *Client) SetCTCSSLevel(trx int, percent int) error {
 
 // CTCSSLevel reads the given TRX's CTCSS subtone level for transmitting in percent.
 func (c *Client) CTCSSLevel(trx int) (int, error) {
-	reply, err := c.command("ctcss_level", trx)
+	reply, err := c.request("ctcss_level", trx)
 	if err != nil {
 		return 0, err
 	}
@@ -993,7 +1002,7 @@ func (c *Client) SetECoderSwitchRX(ecoder int, trx int) error {
 
 // ECoderSwitchRX reads which TRX is assigned to the given E-Coder.
 func (c *Client) ECoderSwitchRX(ecoder int) (int, error) {
-	reply, err := c.command("ecoder_switch_rx", ecoder)
+	reply, err := c.request("ecoder_switch_rx", ecoder)
 	if err != nil {
 		return 0, err
 	}
@@ -1008,7 +1017,7 @@ func (c *Client) SetECoderSwitchChannel(ecoder int, vfo VFO) error {
 
 // ECoderSwitchChannel reads which channel is assigned to the given E-Coder.
 func (c *Client) ECoderSwitchChannel(ecoder int) (VFO, error) {
-	reply, err := c.command("ecoder_switch_channel", ecoder)
+	reply, err := c.request("ecoder_switch_channel", ecoder)
 	if err != nil {
 		return 0, err
 	}
@@ -1024,7 +1033,7 @@ func (c *Client) SetRXVolume(trx int, vfo VFO, dB int) error {
 
 // RXVolume reads the given TRX's channel volume in dB (range from -60dB to 0dB).
 func (c *Client) RXVolume(trx int, vfo VFO) (int, error) {
-	reply, err := c.command("rx_volume", trx, vfo)
+	reply, err := c.request("rx_volume", trx, vfo)
 	if err != nil {
 		return 0, err
 	}
@@ -1039,7 +1048,7 @@ func (c *Client) SetRXBalance(trx int, vfo VFO, dB int) error {
 
 // RXBalance reads the given TRX's channel balance in dB (range from -40dB to 40dB).
 func (c *Client) RXBalance(trx int, vfo VFO) (int, error) {
-	reply, err := c.command("rx_balance", trx, vfo)
+	reply, err := c.request("rx_balance", trx, vfo)
 	if err != nil {
 		return 0, err
 	}

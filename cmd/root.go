@@ -60,9 +60,9 @@ func runWithClient(f func(context.Context, *client.Client, *cobra.Command, []str
 
 		var c *client.Client
 		if rootFlags.reconnect {
-			c = client.KeepOpen(host, 30*time.Second)
+			c = client.KeepOpen(host, 30*time.Second, false)
 		} else {
-			c, err = client.Open(host)
+			c, err = client.Open(host, false)
 		}
 		if err != nil {
 			log.Fatalf("cannot conntect to %s: %v", host.String(), err)
