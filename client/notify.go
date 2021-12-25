@@ -2,12 +2,30 @@ package client
 
 import "log"
 
+const (
+	tci_1_4 tciVersion = 1.4
+	tci_1_5 tciVersion = 1.5
+)
+
+type tciVersion float64
+
+// Beyond indicates if this TCI version is beyond the given version.
+func (v tciVersion) Beyond(o tciVersion) bool {
+	return v > o
+}
+
+// AtLeast indicates if this TCI version is at least the given version.
+func (v tciVersion) AtLeast(o tciVersion) bool {
+	return v >= o
+}
+
 func newNotifier(listeners []interface{}, closed <-chan struct{}) *notifier {
 	result := &notifier{
 		listeners:      listeners,
 		closed:         closed,
 		textMessages:   make(chan Message, 1),
 		binaryMessages: make(chan BinaryMessage, 1),
+		tciVersion:     1.4,
 	}
 	go result.notifyLoop()
 	return result
@@ -18,6 +36,8 @@ type notifier struct {
 	closed         <-chan struct{}
 	textMessages   chan Message
 	binaryMessages chan BinaryMessage
+	tciName        string
+	tciVersion     tciVersion
 }
 
 func (n *notifier) notifyLoop() {
@@ -46,6 +66,9 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 	n.emitMessage(msg)
 	var err error
 	switch msg.name {
+	case "protocol":
+		n.setTCIProtocol(msg)
+		err = n.emitProtocol(msg)
 	case "vfo_limits":
 		err = n.emitVFOLimits(msg)
 	case "if_limits":
@@ -118,8 +141,6 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 		err = n.emitStopAudio(msg)
 	case "audio_samplerate":
 		err = n.emitAudioSampleRate(msg)
-	case "protocol":
-		err = n.emitProtocol(msg)
 	case "tx_power":
 		err = n.emitTXPower(msg)
 	case "tx_swr":
@@ -164,6 +185,22 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 	}
 }
 
+func (n *notifier) setTCIProtocol(msg Message) {
+	name, err := msg.ToString(0)
+	if err != nil {
+		log.Printf("Cannot parse protocol message: %w", err)
+		return
+	}
+	version, err := msg.ToFloat(1)
+	if err != nil {
+		log.Printf("Cannot parse protocol version: %w", err)
+		return
+	}
+
+	n.tciName = name
+	n.tciVersion = tciVersion(version)
+}
+
 // MessageListener is notified when any text message is received from the TCI server.
 type MessageListener interface {
 	Message(msg Message)
@@ -175,6 +212,28 @@ func (n *notifier) emitMessage(msg Message) {
 			listener.Message(msg)
 		}
 	}
+}
+
+// A ProtocolListener is notified when a PROTOCOL message is received from the TCI server.
+type ProtocolListener interface {
+	SetProtocol(name string, version string)
+}
+
+func (n *notifier) emitProtocol(msg Message) error {
+	name, err := msg.ToString(0)
+	if err != nil {
+		return err
+	}
+	version, err := msg.ToString(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(ProtocolListener); ok {
+			listener.SetProtocol(name, version)
+		}
+	}
+	return nil
 }
 
 // A VFOLimitsListener is notified when a VFO_LIMITS message is received from the TCI server.
@@ -910,28 +969,6 @@ func (n *notifier) emitAudioSampleRate(msg Message) error {
 	for _, l := range n.listeners {
 		if listener, ok := l.(AudioSampleRateListener); ok {
 			listener.SetAudioSampleRate(AudioSampleRate(sampleRate))
-		}
-	}
-	return nil
-}
-
-// A ProtocolListener is notified when a PROTOCOL message is received from the TCI server.
-type ProtocolListener interface {
-	SetProtocol(name string, version string)
-}
-
-func (n *notifier) emitProtocol(msg Message) error {
-	name, err := msg.ToString(0)
-	if err != nil {
-		return err
-	}
-	version, err := msg.ToString(1)
-	if err != nil {
-		return err
-	}
-	for _, l := range n.listeners {
-		if listener, ok := l.(ProtocolListener); ok {
-			listener.SetProtocol(name, version)
 		}
 	}
 	return nil
