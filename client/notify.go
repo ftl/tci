@@ -121,6 +121,8 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 		err = n.emitCWMacrosSpeed(msg)
 	case "cw_macros_delay":
 		err = n.emitCWMacrosDelay(msg)
+	case "cw_macros_empty":
+		err = n.emitCWMacrosEmpty(msg)
 	case "trx":
 		err = n.emitTX(msg)
 	case "tune":
