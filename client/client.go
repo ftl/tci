@@ -1116,3 +1116,25 @@ func (c *Client) RXBalance(trx int, vfo VFO) (int, error) {
 	}
 	return reply.ToInt(2)
 }
+
+// SetRXSensorsEnable enables/disables the sharing of receiver sensor readings with the given interval in milliseconds. (since TCI 1.5)
+func (c *Client) SetRXSensorsEnable(enabled bool, milliseconds int) error {
+	var err error
+	if enabled {
+		_, err = c.command("rx_sensors_enable", true, milliseconds)
+	} else {
+		_, err = c.command("rx_sensors_enable", false)
+	}
+	return err
+}
+
+// SetTXSensorsEnable enables/disables the sharing of transmitter sensor readings with the given interval in milliseconds. (since TCI 1.5)
+func (c *Client) SetTXSensorsEnable(enabled bool, milliseconds int) error {
+	var err error
+	if enabled {
+		_, err = c.command("tx_sensors_enable", true, milliseconds)
+	} else {
+		_, err = c.command("tx_sensors_enable", false)
+	}
+	return err
+}

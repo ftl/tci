@@ -179,6 +179,10 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 		err = n.emitRXVolume(msg)
 	case "rx_balance":
 		err = n.emitRXBalance(msg)
+	case "rx_sensors":
+		err = n.emitRXSensors(msg)
+	case "tx_sensors":
+		err = n.emitTXSensors(msg)
 	default:
 		log.Printf("unknown incoming message: %v", msg)
 	}
@@ -1411,6 +1415,62 @@ func (n *notifier) emitRXBalance(msg Message) error {
 	for _, l := range n.listeners {
 		if listener, ok := l.(RXBalanceListener); ok {
 			listener.SetRXBalance(trx, VFO(vfo), dB)
+		}
+	}
+	return nil
+}
+
+// A RXSensorsListener is notified when a RX_SENSORS message is received from the TCI server. (since TCI 1.5)
+type RXSensorsListener interface {
+	SetRXSensors(trx int, dBm float64)
+}
+
+func (n *notifier) emitRXSensors(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	dBm, err := msg.ToFloat(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXSensorsListener); ok {
+			listener.SetRXSensors(trx, dBm)
+		}
+	}
+	return nil
+}
+
+// A TXSensorsListener is notified when a TX_SENSORS message is received from the TCI server. (since TCI 1.5)
+type TXSensorsListener interface {
+	SetTXSensors(trx int, micdBm float64, txRMS float64, txPeak float64, swr float64)
+}
+
+func (n *notifier) emitTXSensors(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	micdBm, err := msg.ToFloat(1)
+	if err != nil {
+		return err
+	}
+	txRMS, err := msg.ToFloat(2)
+	if err != nil {
+		return err
+	}
+	txPeak, err := msg.ToFloat(3)
+	if err != nil {
+		return err
+	}
+	swr, err := msg.ToFloat(4)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(TXSensorsListener); ok {
+			listener.SetTXSensors(trx, micdBm, txRMS, txPeak, swr)
 		}
 	}
 	return nil
