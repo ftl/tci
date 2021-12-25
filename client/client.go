@@ -787,6 +787,27 @@ func (c *Client) TuneDrive() (int, error) {
 	return reply.ToInt(0)
 }
 
+// SetTRXTuneDrive sets the output power for tuning for a certain TRX in percent. (since TCI 1.5)
+func (c *Client) SetTRXTuneDrive(trx int, percent int) error {
+	if !c.tciVersion.AtLeast(tci_1_5) {
+		return fmt.Errorf("SetTRXTuneDrive requires at least TCI 1.5")
+	}
+	_, err := c.command("tune_drive", trx, percent)
+	return err
+}
+
+// TRXTuneDrive reads the output power for tuning of a certain TRX in percent. (since TCI 1.5)
+func (c *Client) TRXTuneDrive(trx int) (int, error) {
+	if !c.tciVersion.AtLeast(tci_1_5) {
+		return 0, fmt.Errorf("TRXTuneDrive requires at least TCI 1.5")
+	}
+	reply, err := c.request("tune_drive", trx)
+	if err != nil {
+		return 0, err
+	}
+	return reply.ToInt(1)
+}
+
 // StartIQ starts the transmission of IQ data for the given TRX.
 func (c *Client) StartIQ(trx int) error {
 	_, err := c.command("iq_start", trx)

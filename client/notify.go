@@ -883,13 +883,41 @@ type TuneDriveListener interface {
 	SetTuneDrive(percent int)
 }
 
+// A TRXTuneDriveListener is notified when a TUNE_DRIVE message for a certain TRX is received from the TCI server.
+type TRXTuneDriveListener interface {
+	SetTRXTuneDrive(trx int, percent int)
+}
+
 func (n *notifier) emitTuneDrive(msg Message) error {
+	if n.tciVersion.Beyond(tci_1_4) {
+		return n.emitTRXTuneDrive(msg)
+	}
+
 	percent, err := msg.ToInt(0)
 	if err != nil {
 		return err
 	}
 	for _, l := range n.listeners {
 		if listener, ok := l.(TuneDriveListener); ok {
+			listener.SetTuneDrive(percent)
+		}
+	}
+	return nil
+}
+
+func (n *notifier) emitTRXTuneDrive(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	percent, err := msg.ToInt(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(TRXTuneDriveListener); ok {
+			listener.SetTRXTuneDrive(trx, percent)
+		} else if listener, ok := l.(TuneDriveListener); ok && (trx == 0) {
 			listener.SetTuneDrive(percent)
 		}
 	}
