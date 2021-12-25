@@ -194,12 +194,12 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 func (n *notifier) setTCIProtocol(msg Message) {
 	name, err := msg.ToString(0)
 	if err != nil {
-		log.Printf("Cannot parse protocol message: %w", err)
+		log.Printf("Cannot parse protocol message: %v", err)
 		return
 	}
 	version, err := msg.ToFloat(1)
 	if err != nil {
-		log.Printf("Cannot parse protocol version: %w", err)
+		log.Printf("Cannot parse protocol version: %v", err)
 		return
 	}
 
