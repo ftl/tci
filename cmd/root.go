@@ -20,6 +20,7 @@ var rootFlags = struct {
 	hostAddress string
 	trx         int
 	reconnect   bool
+	trace       bool
 }{}
 
 var rootCmd = &cobra.Command{
@@ -40,6 +41,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&rootFlags.hostAddress, "host", "localhost:40001", "connect to this TCI host")
 	rootCmd.PersistentFlags().IntVar(&rootFlags.trx, "trx", 0, "use this TRX")
 	rootCmd.PersistentFlags().BoolVar(&rootFlags.reconnect, "reconnect", false, "try to reconnect if the TCI connection failed")
+	rootCmd.PersistentFlags().BoolVar(&rootFlags.trace, "trace", false, "trace the TCI communication to the console")
 }
 
 func runWithClient(f func(context.Context, *client.Client, *cobra.Command, []string)) func(*cobra.Command, []string) {
@@ -60,9 +62,9 @@ func runWithClient(f func(context.Context, *client.Client, *cobra.Command, []str
 
 		var c *client.Client
 		if rootFlags.reconnect {
-			c = client.KeepOpen(host, 30*time.Second, false)
+			c = client.KeepOpen(host, 30*time.Second, rootFlags.trace)
 		} else {
-			c, err = client.Open(host, false)
+			c, err = client.Open(host, rootFlags.trace)
 		}
 		if err != nil {
 			log.Fatalf("cannot conntect to %s: %v", host.String(), err)
