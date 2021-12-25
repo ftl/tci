@@ -713,6 +713,20 @@ func (n *notifier) emitCWMacrosDelay(msg Message) error {
 	return nil
 }
 
+// A CWMacrosEmptyListener is notified then a CW_MACROS_EMPTY message is received from the TCI server. (since TCI 1.5)
+type CWMacrosEmptyListener interface {
+	CWMacrosEmpty()
+}
+
+func (n *notifier) emitCWMacrosEmpty(msg Message) error {
+	for _, l := range n.listeners {
+		if listener, ok := l.(CWMacrosEmptyListener); ok {
+			listener.CWMacrosEmpty()
+		}
+	}
+	return nil
+}
+
 // A TXListener is notified when a TRX message is received from the TCI server.
 type TXListener interface {
 	SetTX(trx int, enabled bool)

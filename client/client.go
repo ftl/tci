@@ -447,6 +447,12 @@ func (c *Client) StopCW() error {
 	return err
 }
 
+// SetCWTerminal enables/disables the terminal mode for CW transmission (since TCI 1.5)
+func (c *Client) SetCWTerminal(enabled bool) error {
+	_, err := c.command("cw_terminal", enabled)
+	return err
+}
+
 // SetDDS sets the center frequency of the given TRX's panorama.
 func (c *Client) SetDDS(trx int, frequency int) error {
 	_, err := c.command("dds", trx, frequency)
