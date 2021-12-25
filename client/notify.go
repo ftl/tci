@@ -837,13 +837,41 @@ type DriveListener interface {
 	SetDrive(percent int)
 }
 
+// A TRXDriveListener is notified when a DRIVE message for a certain TRX is received from the TCI server. (since TCI 1.5)
+type TRXDriveListener interface {
+	SetTRXDrive(trx int, percent int)
+}
+
 func (n *notifier) emitDrive(msg Message) error {
+	if n.tciVersion.Beyond(tci_1_4) {
+		return n.emitTRXDrive(msg)
+	}
+
 	percent, err := msg.ToInt(0)
 	if err != nil {
 		return err
 	}
 	for _, l := range n.listeners {
 		if listener, ok := l.(DriveListener); ok {
+			listener.SetDrive(percent)
+		}
+	}
+	return nil
+}
+
+func (n *notifier) emitTRXDrive(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	percent, err := msg.ToInt(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(TRXDriveListener); ok {
+			listener.SetTRXDrive(trx, percent)
+		} else if listener, ok := l.(DriveListener); ok && (trx == 0) {
 			listener.SetDrive(percent)
 		}
 	}

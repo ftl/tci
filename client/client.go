@@ -723,18 +723,53 @@ func (c *Client) Tune(trx int) (bool, error) {
 }
 
 // SetDrive sets the output power in percent.
+// Starting from TCI version 1.5, this command affects TRX 0.
 func (c *Client) SetDrive(percent int) error {
-	_, err := c.command("drive", percent)
+	var err error
+	if c.tciVersion.Beyond(tci_1_4) {
+		_, err = c.command("drive", 0, percent)
+	} else {
+		_, err = c.command("drive", percent)
+	}
 	return err
 }
 
 // Drive reads the output power in percent.
+// Starting from TCI version 1.5, this command affects TRX 0.
 func (c *Client) Drive() (int, error) {
-	reply, err := c.request("drive")
+	var reply Message
+	var err error
+	if c.tciVersion.Beyond(tci_1_4) {
+		reply, err = c.request("drive", 0)
+
+	} else {
+		reply, err = c.request("drive")
+	}
 	if err != nil {
 		return 0, err
 	}
 	return reply.ToInt(0)
+}
+
+// SetTRXDrive sets the output power for a certain TRX in percent. (since TCI 1.5)
+func (c *Client) SetTRXDrive(trx int, percent int) error {
+	if !c.tciVersion.AtLeast(tci_1_5) {
+		return fmt.Errorf("SetTRXDrive requires at least TCI 1.5")
+	}
+	_, err := c.command("drive", trx, percent)
+	return err
+}
+
+// TRXDrive reads the output power of a certain TRX in percent. (since TCI 1.5)
+func (c *Client) TRXDrive(trx int) (int, error) {
+	if !c.tciVersion.AtLeast(tci_1_5) {
+		return 0, fmt.Errorf("TRXDrive requires at least TCI 1.5")
+	}
+	reply, err := c.request("drive", trx)
+	if err != nil {
+		return 0, err
+	}
+	return reply.ToInt(1)
 }
 
 // SetTuneDrive sets the output power for tuning in percent.
