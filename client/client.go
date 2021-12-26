@@ -1138,3 +1138,146 @@ func (c *Client) SetTXSensorsEnable(enabled bool, milliseconds int) error {
 	}
 	return err
 }
+
+// SetRXNBEnable enables/disables the given TRX's noise blanker. (since TCI 1.6)
+func (c *Client) SetRXNBEnable(trx int, enabled bool) error {
+	_, err := c.command("rx_nb_enable", trx, enabled)
+	return err
+}
+
+// RXNBEnable reads the given TRX's noise blanker enable state. (since TCI 1.6)
+func (c *Client) RXNBEnable(trx int) (bool, error) {
+	reply, err := c.request("rx_nb_enable", trx)
+	if err != nil {
+		return false, err
+	}
+	return reply.ToBool(2)
+}
+
+// SetRXNBParams sets the given TRX's noise blanker parameters. (since TCI 1.6)
+func (c *Client) SetRXNBParams(trx int, threshold int, impulseLength int) error {
+	_, err := c.command("rx_nb_param", trx, threshold, impulseLength)
+	return err
+}
+
+// RXNBParams reads the given TRX's noise blanker parameters. (since TCI 1.6)
+func (c *Client) RXNBParams(trx int) (int, int, error) {
+	reply, err := c.request("rx_nb_param", trx)
+	if err != nil {
+		return 0, 0, err
+	}
+	threshold, err := reply.ToInt(1)
+	if err != nil {
+		return 0, 0, err
+	}
+	impulseLength, err := reply.ToInt(2)
+	if err != nil {
+		return 0, 0, err
+	}
+	return threshold, impulseLength, nil
+}
+
+// SetRXBinEnable enables/disables the given TRX's pseudo stereo for CW. (since TCI 1.6)
+func (c *Client) SetRXBinEnable(trx int, enabled bool) error {
+	_, err := c.command("rx_bin_enable", trx, enabled)
+	return err
+}
+
+// RXBinEnable reads the given TRX's pseudo stereo enable state. (since TCI 1.6)
+func (c *Client) RXBinEnable(trx int) (bool, error) {
+	reply, err := c.request("rx_bin_enable", trx)
+	if err != nil {
+		return false, err
+	}
+	return reply.ToBool(2)
+}
+
+// SetRXNREnable enables/disables the given TRX's noise reduction. (since TCI 1.6)
+func (c *Client) SetRXNREnable(trx int, enabled bool) error {
+	_, err := c.command("rx_nr_enable", trx, enabled)
+	return err
+}
+
+// RXNREnable reads the given TRX's noise reduction enable state. (since TCI 1.6)
+func (c *Client) RXNREnable(trx int) (bool, error) {
+	reply, err := c.request("rx_nr_enable", trx)
+	if err != nil {
+		return false, err
+	}
+	return reply.ToBool(2)
+}
+
+// SetRXANCEnable enables/disables the given TRX's automatic noise cancellation. (since TCI 1.6)
+func (c *Client) SetRXANCEnable(trx int, enabled bool) error {
+	_, err := c.command("rx_anc_enable", trx, enabled)
+	return err
+}
+
+// RXANCEnable reads the given TRX's automatic noise cancellation enable state. (since TCI 1.6)
+func (c *Client) RXANCEnable(trx int) (bool, error) {
+	reply, err := c.request("rx_anc_enable", trx)
+	if err != nil {
+		return false, err
+	}
+	return reply.ToBool(2)
+}
+
+// SetRXANFEnable enables/disables the given TRX's automatic notch filter. (since TCI 1.6)
+func (c *Client) SetRXANFEnable(trx int, enabled bool) error {
+	_, err := c.command("rx_anf_enable", trx, enabled)
+	return err
+}
+
+// RXANFEnable reads the given TRX's automatic notch filter enable state. (since TCI 1.6)
+func (c *Client) RXANFEnable(trx int) (bool, error) {
+	reply, err := c.request("rx_anf_enable", trx)
+	if err != nil {
+		return false, err
+	}
+	return reply.ToBool(2)
+}
+
+// SetRXAPFEnable enables/disables the given TRX's analogue peak filter. (since TCI 1.6)
+func (c *Client) SetRXAPFEnable(trx int, enabled bool) error {
+	_, err := c.command("rx_apf_enable", trx, enabled)
+	return err
+}
+
+// RXANFEnable reads the given TRX's analogue peak filter enable state. (since TCI 1.6)
+func (c *Client) RXAPFEnable(trx int) (bool, error) {
+	reply, err := c.request("rx_apf_enable", trx)
+	if err != nil {
+		return false, err
+	}
+	return reply.ToBool(2)
+}
+
+// SetRXDSEEnable enables/disables the given TRX's digital surround sound effect. (since TCI 1.6)
+func (c *Client) SetRXDSEEnable(trx int, enabled bool) error {
+	_, err := c.command("rx_dse_enable", trx, enabled)
+	return err
+}
+
+// RXDSEEnable reads the given TRX's digital surround sound effect enable state. (since TCI 1.6)
+func (c *Client) RXDSEEnable(trx int) (bool, error) {
+	reply, err := c.request("rx_dse_enable", trx)
+	if err != nil {
+		return false, err
+	}
+	return reply.ToBool(2)
+}
+
+// SetRXNFEnable enables/disables the given TRX's band notch filters. (since TCI 1.6)
+func (c *Client) SetRXNFEnable(trx int, enabled bool) error {
+	_, err := c.command("rx_nf_enable", trx, enabled)
+	return err
+}
+
+// RXNFEnable reads the given TRX's band notch filters enable state. (since TCI 1.6)
+func (c *Client) RXNFEnable(trx int) (bool, error) {
+	reply, err := c.request("rx_nf_enable", trx)
+	if err != nil {
+		return false, err
+	}
+	return reply.ToBool(2)
+}

@@ -183,6 +183,26 @@ func (n *notifier) handleIncomingMessage(msg Message) {
 		err = n.emitRXSensors(msg)
 	case "tx_sensors":
 		err = n.emitTXSensors(msg)
+	case "rx_nb_enable":
+		err = n.emitRXNBEnable(msg)
+	case "rx_nb_param":
+		err = n.emitRXNBParams(msg)
+	case "rx_bin_enable":
+		err = n.emitRXBinEnable(msg)
+	case "rx_nr_enable":
+		err = n.emitRXNREnable(msg)
+	case "rx_anc_enable":
+		err = n.emitRXANCEnable(msg)
+	case "rx_anf_enable":
+		err = n.emitRXANFEnable(msg)
+	case "rx_apf_enable":
+		err = n.emitRXAPFEnable(msg)
+	case "rx_dse_enable":
+		err = n.emitRXDSEEnable(msg)
+	case "rx_nf_enable":
+		err = n.emitRXNFEnable(msg)
+	case "tx_frequency":
+		err = n.emitTXFrequency(msg)
 	default:
 		log.Printf("unknown incoming message: %v", msg)
 	}
@@ -1475,6 +1495,234 @@ func (n *notifier) emitTXSensors(msg Message) error {
 	}
 	return nil
 }
+
+// A RXNBEnableListener is notified when a RX_NB_ENABLE message is received from the TCI server. (since TCI 1.6)
+type RXNBEnableListener interface {
+	SetRXNBEnable(trx int, enabled bool)
+}
+
+func (n *notifier) emitRXNBEnable(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	enabled, err := msg.ToBool(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXNBEnableListener); ok {
+			listener.SetRXNBEnable(trx, enabled)
+		}
+	}
+	return nil
+}
+
+// A RXNBParamsListener is notified when a RX_NB_PARAM message is received from the TCI server. (since TCI 1.6)
+type RXNBParamsListener interface {
+	SetRXNBParams(trx int, threshold int, impulseLength int)
+}
+
+func (n *notifier) emitRXNBParams(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	threshold, err := msg.ToInt(1)
+	if err != nil {
+		return err
+	}
+	impulseLength, err := msg.ToInt(2)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXNBParamsListener); ok {
+			listener.SetRXNBParams(trx, threshold, impulseLength)
+		}
+	}
+	return nil
+}
+
+// A RXBinEnableListener is notified when a RX_BIN_ENABLE message is received from the TCI server. (since TCI 1.6)
+type RXBinEnableListener interface {
+	SetRXBinEnable(trx int, enabled bool)
+}
+
+func (n *notifier) emitRXBinEnable(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	enabled, err := msg.ToBool(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXBinEnableListener); ok {
+			listener.SetRXBinEnable(trx, enabled)
+		}
+	}
+	return nil
+}
+
+// A RXNREnableListener is notified when a RX_NR_ENABLE message is received from the TCI server. (since TCI 1.6)
+type RXNREnableListener interface {
+	SetRXNREnable(trx int, enabled bool)
+}
+
+func (n *notifier) emitRXNREnable(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	enabled, err := msg.ToBool(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXNREnableListener); ok {
+			listener.SetRXNREnable(trx, enabled)
+		}
+	}
+	return nil
+}
+
+// A RXANCEnableListener is notified when a RX_ANC_ENABLE message is received from the TCI server. (since TCI 1.6)
+type RXANCEnableListener interface {
+	SetRXANCEnable(trx int, enabled bool)
+}
+
+func (n *notifier) emitRXANCEnable(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	enabled, err := msg.ToBool(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXANCEnableListener); ok {
+			listener.SetRXANCEnable(trx, enabled)
+		}
+	}
+	return nil
+}
+
+// A RXANFEnableListener is notified when a RX_ANF_ENABLE message is received from the TCI server. (since TCI 1.6)
+type RXANFEnableListener interface {
+	SetRXANFEnable(trx int, enabled bool)
+}
+
+func (n *notifier) emitRXANFEnable(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	enabled, err := msg.ToBool(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXANFEnableListener); ok {
+			listener.SetRXANFEnable(trx, enabled)
+		}
+	}
+	return nil
+}
+
+// A RXAPFEnableListener is notified when a RX_APF_ENABLE message is received from the TCI server. (since TCI 1.6)
+type RXAPFEnableListener interface {
+	SetRXAPFEnable(trx int, enabled bool)
+}
+
+func (n *notifier) emitRXAPFEnable(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	enabled, err := msg.ToBool(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXAPFEnableListener); ok {
+			listener.SetRXAPFEnable(trx, enabled)
+		}
+	}
+	return nil
+}
+
+// A RXDSEEnableListener is notified when a RX_DSE_ENABLE message is received from the TCI server. (since TCI 1.6)
+type RXDSEEnableListener interface {
+	SetRXDSEEnable(trx int, enabled bool)
+}
+
+func (n *notifier) emitRXDSEEnable(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	enabled, err := msg.ToBool(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXDSEEnableListener); ok {
+			listener.SetRXDSEEnable(trx, enabled)
+		}
+	}
+	return nil
+}
+
+// A RXNFEnableListener is notified when a RX_NF_ENABLE message is received from the TCI server. (since TCI 1.6)
+type RXNFEnableListener interface {
+	SetRXNFEnable(trx int, enabled bool)
+}
+
+func (n *notifier) emitRXNFEnable(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	enabled, err := msg.ToBool(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(RXNFEnableListener); ok {
+			listener.SetRXNFEnable(trx, enabled)
+		}
+	}
+	return nil
+}
+
+// A TXFrequencyListener is notified when a TX_FREQUENCY message is received from the TCI server. (since TCI 1.6)
+type TXFrequencyListener interface {
+	SetTXFrequency(trx int, frequency int)
+}
+
+func (n *notifier) emitTXFrequency(msg Message) error {
+	trx, err := msg.ToInt(0)
+	if err != nil {
+		return err
+	}
+	frequency, err := msg.ToInt(1)
+	if err != nil {
+		return err
+	}
+	for _, l := range n.listeners {
+		if listener, ok := l.(TXFrequencyListener); ok {
+			listener.SetTXFrequency(trx, frequency)
+		}
+	}
+	return nil
+}
+
+/*
+ * Binary Messages
+ */
 
 func (n *notifier) binaryMessage(msg BinaryMessage) {
 	n.binaryMessages <- msg
