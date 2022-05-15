@@ -110,6 +110,7 @@ func KeepOpen(host *net.TCPAddr, retryInterval time.Duration, trace bool, listen
 	client := newClient(host, trace, listeners)
 	go func() {
 		disconnected := make(chan bool, 1)
+		log.Printf("connecting to %s...", host.IP.String())
 		for {
 			err := client.connect()
 			if err == nil {
@@ -124,12 +125,16 @@ func KeepOpen(host *net.TCPAddr, retryInterval time.Duration, trace bool, listen
 					return
 				}
 			} else {
-				log.Printf("cannot connect to %s, waiting for retry: %v", host.IP.String(), err)
+				if trace {
+					log.Printf("cannot connect to %s, waiting for retry: %v", host.IP.String(), err)
+				}
 			}
 
 			select {
 			case <-time.After(retryInterval):
-				log.Printf("retrying to connect to %s", host.IP.String())
+				if trace {
+					log.Printf("retrying to connect to %s", host.IP.String())
+				}
 			case <-client.closed:
 				log.Print("connection closed")
 				return
