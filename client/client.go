@@ -877,7 +877,7 @@ func (c *Client) AddSpot(callsign string, mode Mode, frequency int, color ARGB, 
 
 // DeleteSpot deletes the spot with the given callsign.
 func (c *Client) DeleteSpot(callsign string) error {
-	_, err := c.command("spot", callsign)
+	_, err := c.command("spot_delete", callsign)
 	return err
 }
 
