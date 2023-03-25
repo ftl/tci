@@ -70,7 +70,8 @@ func NewARGB(a, r, g, b byte) ARGB {
 type ARGB uint32
 
 func (c ARGB) String() string {
-	return fmt.Sprintf("#%x", uint32(c))
+	return fmt.Sprintf("%d", uint32(c))
+	// return fmt.Sprintf("#%x", uint32(c))
 }
 
 // A is the alpha channel of this color.
