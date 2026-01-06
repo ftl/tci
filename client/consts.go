@@ -16,6 +16,7 @@ type Mode string
 
 // All modes acvailable in TCI.
 const (
+	ModeNone = Mode("")
 	ModeAM   = Mode("am")
 	ModeSAM  = Mode("sam")
 	ModeDSB  = Mode("dsb")

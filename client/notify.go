@@ -1,6 +1,9 @@
 package client
 
-import "log"
+import (
+	"log"
+	"strings"
+)
 
 const (
 	tci_1_4 tciVersion = 1.4
@@ -566,6 +569,7 @@ func (n *notifier) emitMode(msg Message) error {
 	if err != nil {
 		return err
 	}
+	mode = strings.ToLower(mode)
 	for _, l := range n.listeners {
 		if listener, ok := l.(ModeListener); ok {
 			listener.SetMode(trx, Mode(mode))

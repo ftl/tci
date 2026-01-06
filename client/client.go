@@ -519,6 +519,7 @@ func (c *Client) Mode(trx int) (Mode, error) {
 	if err != nil {
 		return "", err
 	}
+	mode = strings.ToLower(mode)
 	return Mode(mode), nil
 }
 
